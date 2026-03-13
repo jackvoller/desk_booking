@@ -304,24 +304,32 @@ function App() {
 
   if (!user) {
     return (
-      <main className="mx-auto flex min-h-screen w-full max-w-3xl items-center px-4">
-        <section className="w-full rounded-3xl bg-white p-8 shadow-2xl">
-          <p className="text-sm font-semibold uppercase tracking-wide text-[#007AB7]">Desk Booking</p>
-          <h1 className="mt-2 text-3xl font-bold text-slate-900">Book your Silverfin UK office desk now</h1>
-          <p className="mt-3 text-slate-600">
+      <main className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-[#0A4A6A] px-4 py-8">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute inset-0 bg-[linear-gradient(140deg,#0A4A6A_0%,#1F67A5_50%,#70BCD2_100%)]" />
+          <div className="absolute -left-28 top-0 h-80 w-80 rounded-br-[220px] bg-[#73BED4]/75" />
+          <div className="absolute right-[-140px] top-[-80px] h-[420px] w-[420px] rounded-full border-[80px] border-[#3B79B8]/80" />
+          <div className="absolute bottom-[-180px] left-[-120px] h-[420px] w-[420px] rounded-full bg-[#44B2CC]/75" />
+          <div className="absolute bottom-[-120px] right-[-160px] h-[360px] w-[360px] rounded-full bg-[#3B79B8]/80" />
+        </div>
+
+        <section className="relative z-10 w-full max-w-3xl rounded-3xl border border-white/45 bg-white/95 p-8 shadow-2xl backdrop-blur-sm">
+          <p className="text-sm font-semibold uppercase tracking-wide text-[#1F67A5]">Desk Booking</p>
+          <h1 className="mt-2 text-3xl font-bold text-[#0D2440]">Book your Silverfin UK office desk now</h1>
+          <p className="mt-3 text-[#35506B]">
             Sign in to view availability, reserve desks, and check monthly occupancy.
           </p>
           {error && <p className="mt-4 rounded-lg bg-red-100 px-3 py-2 text-sm text-red-700">{error}</p>}
 
           {authProviders.devLogin ? (
             <form className="mt-6 space-y-3" onSubmit={handleDevLogin}>
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Quick local access</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#3C6283]">Quick local access</p>
               <input
                 type="text"
                 placeholder="Your name"
                 value={devUsername}
                 onChange={(event) => setDevUsername(event.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-[#9FCFDD] bg-white px-3 py-2 text-sm text-[#0D2440] placeholder:text-[#4C6A85] focus:border-[#1F67A5] focus:outline-none focus:ring-2 focus:ring-[#70BCD2]/40"
                 maxLength={80}
               />
               <input
@@ -329,11 +337,11 @@ function App() {
                 placeholder="you@example.com"
                 value={devEmail}
                 onChange={(event) => setDevEmail(event.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-[#9FCFDD] bg-white px-3 py-2 text-sm text-[#0D2440] placeholder:text-[#4C6A85] focus:border-[#1F67A5] focus:outline-none focus:ring-2 focus:ring-[#70BCD2]/40"
               />
               <button
                 type="submit"
-                className="w-full rounded-lg bg-[#007AB7] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#04588C] disabled:cursor-not-allowed disabled:opacity-60"
+                className="w-full rounded-lg bg-[#1F67A5] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0A4A6A] disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={isDevLoggingIn}
               >
                 {isDevLoggingIn ? 'Signing in...' : 'Continue with Dev Login'}
@@ -341,12 +349,12 @@ function App() {
             </form>
           ) : null}
 
-          {authProviders.devLogin && authProviders.slack ? <div className="my-5 h-px w-full bg-slate-200" /> : null}
+          {authProviders.devLogin && authProviders.slack ? <div className="my-5 h-px w-full bg-[#B6D8E4]" /> : null}
 
           {authProviders.slack ? (
             <button
               type="button"
-              className="w-full rounded-lg border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              className="w-full rounded-lg border border-[#1F67A5] bg-white px-5 py-3 text-sm font-semibold text-[#1F67A5] transition hover:bg-[#E8F5FA]"
               onClick={api.loginWithSlack}
             >
               Sign in with Slack
@@ -358,7 +366,7 @@ function App() {
           ) : null}
 
           {showAuthProviderDebug ? (
-            <p className="mt-4 rounded-lg bg-slate-100 px-3 py-2 text-xs font-medium text-slate-600">
+            <p className="mt-4 rounded-lg bg-[#E8F5FA] px-3 py-2 text-xs font-medium text-[#3C6283]">
               Auth providers: dev={String(authProviders.devLogin)}, slack={String(authProviders.slack)}, google=
               {String(authProviders.google)}
             </p>
