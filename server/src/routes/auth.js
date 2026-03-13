@@ -38,6 +38,25 @@ function isSlackAuthConfigured() {
   return Boolean(process.env.SLACK_CLIENT_ID && process.env.SLACK_CLIENT_SECRET);
 }
 
+function parseAllowedIds(rawValue) {
+  if (!rawValue || typeof rawValue !== 'string') {
+    return [];
+  }
+
+  return rawValue
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
+
+function getAllowedSlackTeamIds() {
+  return parseAllowedIds(process.env.SLACK_ALLOWED_TEAM_IDS || process.env.SLACK_ALLOWED_TEAM_ID);
+}
+
+function getAllowedSlackOrgIds() {
+  return parseAllowedIds(process.env.SLACK_ALLOWED_ORG_IDS || process.env.SLACK_ALLOWED_ORG_ID);
+}
+
 function getAuthProviders() {
   return {
     devLogin: isDevAuthEnabled(),
@@ -198,6 +217,11 @@ router.get('/slack/callback', async (req, res, next) => {
 
     const teamId =
       userInfoPayload['https://slack.com/team_id'] ?? tokenPayload['https://slack.com/team_id'] ?? slackClaims['https://slack.com/team_id'] ?? '';
+    const orgId =
+      userInfoPayload['https://slack.com/enterprise_id'] ??
+      tokenPayload['https://slack.com/enterprise_id'] ??
+      slackClaims['https://slack.com/enterprise_id'] ??
+      '';
     const userId =
       userInfoPayload['https://slack.com/user_id'] ?? tokenPayload['https://slack.com/user_id'] ?? slackClaims['https://slack.com/user_id'] ?? userInfoPayload.sub ?? '';
     const email = (userInfoPayload.email ?? slackClaims.email ?? '').trim().toLowerCase();
@@ -210,8 +234,14 @@ router.get('/slack/callback', async (req, res, next) => {
       return redirectAuthError(res, 'slackProfile');
     }
 
-    const allowedTeamId = (process.env.SLACK_ALLOWED_TEAM_ID || '').trim();
-    if (allowedTeamId && teamId !== allowedTeamId) {
+    const allowedTeamIds = getAllowedSlackTeamIds();
+    const allowedOrgIds = getAllowedSlackOrgIds();
+
+    if (allowedTeamIds.length > 0 && !allowedTeamIds.includes(teamId)) {
+      return redirectAuthError(res, 'slackWorkspace');
+    }
+
+    if (allowedOrgIds.length > 0 && !allowedOrgIds.includes(orgId)) {
       return redirectAuthError(res, 'slackWorkspace');
     }
 

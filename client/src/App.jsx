@@ -83,7 +83,7 @@ function App() {
         slackState: 'Slack sign-in session expired. Please try again.',
         slackToken: 'Unable to complete Slack sign-in. Please try again.',
         slackProfile: 'Could not read your Slack profile. Please try again.',
-        slackWorkspace: 'You must sign in with an approved Slack workspace.'
+        slackWorkspace: 'You must sign in with an approved Slack workspace or enterprise org.'
       };
 
       setError(errorMessages[authError] || 'Sign-in failed. Please try again.');
@@ -307,7 +307,7 @@ function App() {
       <main className="mx-auto flex min-h-screen w-full max-w-3xl items-center px-4">
         <section className="w-full rounded-3xl bg-white p-8 shadow-2xl">
           <p className="text-sm font-semibold uppercase tracking-wide text-[#007AB7]">Desk Booking</p>
-          <h1 className="mt-2 text-3xl font-bold text-slate-900">Book desks with a live floor plan</h1>
+          <h1 className="mt-2 text-3xl font-bold text-slate-900">Book your Silverfin UK office desk now</h1>
           <p className="mt-3 text-slate-600">
             Sign in to view availability, reserve desks, and check monthly occupancy.
           </p>

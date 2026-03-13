@@ -71,6 +71,10 @@ https://app.slack.com/client/TXXXXXXX/CXXXXXXX
 
 Use `TXXXXXXX` as `SLACK_ALLOWED_TEAM_ID`.
 
+If you are on Slack Enterprise Grid and primarily have an org ID (`E...`), you can use:
+
+- `SLACK_ALLOWED_ORG_ID=E...`
+
 ## Step 3: Render Service Setup
 
 1. In Render, create `New` -> `Web Service`.
@@ -102,7 +106,8 @@ CLIENT_BASE_URL=https://<your-render-service>.onrender.com
 SLACK_CLIENT_ID=<slack-client-id>
 SLACK_CLIENT_SECRET=<slack-client-secret>
 SLACK_REDIRECT_URI=https://<your-render-service>.onrender.com/auth/slack/callback
-SLACK_ALLOWED_TEAM_ID=<T...>
+SLACK_ALLOWED_TEAM_ID=<T...>         # optional
+SLACK_ALLOWED_ORG_ID=<E...>          # optional
 ```
 
 5. Deploy latest commit.
@@ -139,4 +144,4 @@ Then open app URL and run login test:
 - Slack provider disabled in `/auth/me`:
   - Missing `SLACK_CLIENT_ID` or `SLACK_CLIENT_SECRET`.
 - Login blocked for workspace:
-  - Check `SLACK_ALLOWED_TEAM_ID` value.
+  - Check `SLACK_ALLOWED_TEAM_ID` and/or `SLACK_ALLOWED_ORG_ID` values.

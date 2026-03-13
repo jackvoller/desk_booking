@@ -63,12 +63,18 @@ Required in production:
 - `SLACK_CLIENT_ID`
 - `SLACK_CLIENT_SECRET`
 - `SLACK_REDIRECT_URI`
-- `SLACK_ALLOWED_TEAM_ID` (recommended for internal-only access)
+- One or both allowlists for internal-only access:
+  - `SLACK_ALLOWED_TEAM_ID` (`T...`)
+  - `SLACK_ALLOWED_ORG_ID` (`E...`)
 
 Common flags:
 
 - `ENABLE_DEV_AUTH=true|false`
 - `NODE_ENV=production`
+
+To remove Quick Local Access from the login page in production, set:
+
+- `ENABLE_DEV_AUTH=false`
 
 ## API Summary
 
