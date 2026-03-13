@@ -22,8 +22,8 @@ export const api = {
   getCurrentUser() {
     return request('/auth/me');
   },
-  loginWithGoogle() {
-    window.location.href = '/auth/google';
+  loginWithSlack() {
+    window.location.href = '/auth/slack';
   },
   devLogin(username, email) {
     return request('/auth/dev-login', {

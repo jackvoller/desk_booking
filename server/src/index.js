@@ -5,12 +5,17 @@ import mongoose from 'mongoose';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
 import passport from 'passport';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { configurePassport } from './config/passport.js';
 import authRoutes from './routes/auth.js';
 import bookingRoutes from './routes/bookings.js';
 
 const PORT = Number(process.env.PORT) || 4000;
 const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const CLIENT_DIST_PATH = path.resolve(__dirname, '../../client/dist');
 
 async function connectToDatabase() {
   if (!process.env.MONGODB_URI) {
@@ -57,6 +62,17 @@ app.get('/health', (_req, res) => {
 
 app.use('/auth', authRoutes);
 app.use('/api/bookings', bookingRoutes);
+
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(CLIENT_DIST_PATH));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/auth') || req.path === '/health') {
+      return next();
+    }
+
+    return res.sendFile(path.join(CLIENT_DIST_PATH, 'index.html'));
+  });
+}
 
 app.use((error, _req, res, _next) => {
   console.error(error);

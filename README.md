@@ -7,11 +7,12 @@ Full-stack desk booking application with:
 - MongoDB database
 - Authentication via:
   - Dev Login (no third-party setup, ideal for local testing)
-  - Google OAuth 2.0 (optional)
+  - Slack OpenID Connect (recommended for free internal SSO)
+  - Google OAuth 2.0 (legacy optional)
 
 ## Features
 
-- Dev Login and Google login both produce identity (`username`, `email`)
+- Dev Login and Slack login both produce identity (`username`, `email`)
 - Authenticated-only booking APIs
 - Interactive SVG floor plan with desk status colors
   - Green = available
@@ -24,7 +25,7 @@ Full-stack desk booking application with:
 
 ## Project Structure
 
-- `server/` - Express API, Google OAuth, MongoDB models
+- `server/` - Express API, Slack/Google auth, MongoDB models
 - `client/` - React app with Desk View + Calendar View
 
 ## Setup
@@ -45,23 +46,37 @@ cp server/.env.example server/.env
 Set the values in `server/.env`:
 
 - `MONGODB_URI`
-- `GOOGLE_CLIENT_ID` (optional if using Dev Login only)
-- `GOOGLE_CLIENT_SECRET` (optional if using Dev Login only)
 - `SERVER_BASE_URL` (default: `http://localhost:4000`)
 - `CLIENT_BASE_URL` (default: `http://localhost:5173`)
 - `SESSION_SECRET`
 - `TOTAL_DESKS` (default: `17`)
 - `ENABLE_DEV_AUTH` (default: `true`)
+- `SLACK_CLIENT_ID` (required for Slack sign-in)
+- `SLACK_CLIENT_SECRET` (required for Slack sign-in)
+- `SLACK_REDIRECT_URI` (default: `http://localhost:4000/auth/slack/callback`)
+- `SLACK_ALLOWED_TEAM_ID` (recommended for internal-only access)
+- `GOOGLE_CLIENT_ID` (optional legacy auth)
+- `GOOGLE_CLIENT_SECRET` (optional legacy auth)
 
-### 3. (Optional) Configure Google OAuth callback URL
+### 3. Configure Slack app (recommended)
+
+In your Slack App settings:
+
+- Add OpenID scopes: `openid`, `profile`, `email`
+- Add redirect URL:
+  - `http://localhost:4000/auth/slack/callback`
+- Install the app in your workspace
+- Set `SLACK_ALLOWED_TEAM_ID` to lock sign-in to your internal workspace
+
+### 4. (Optional) Configure Google OAuth callback URL
 
 In Google Cloud Console OAuth credentials, add:
 
 - `http://localhost:4000/auth/google/callback`
 
-If you only want local testing, skip Google setup and use the Dev Login form on the sign-in page.
+If you only want local testing, skip OAuth setup and use the Dev Login form on the sign-in page.
 
-### 4. Run the app
+### 5. Run the app
 
 Run both servers in separate terminals:
 

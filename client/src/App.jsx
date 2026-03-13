@@ -9,6 +9,11 @@ import { addDays, isWeekendDate, isWithinAdvanceWindow, todayDateString } from '
 const MAX_ADVANCE_DAYS = 30;
 const TODAY = todayDateString();
 const MAX_DATE = addDays(TODAY, MAX_ADVANCE_DAYS);
+const DEFAULT_AUTH_PROVIDERS = {
+  devLogin: true,
+  slack: false,
+  google: false
+};
 
 function findNearestWeekday(dateString, dayOffset) {
   const step = dayOffset >= 0 ? 1 : -1;
@@ -27,6 +32,7 @@ function findNearestWeekday(dateString, dayOffset) {
 
 function App() {
   const [user, setUser] = useState(null);
+  const [authProviders, setAuthProviders] = useState(DEFAULT_AUTH_PROVIDERS);
   const [authLoading, setAuthLoading] = useState(true);
   const [activeView, setActiveView] = useState('desk');
 
@@ -44,6 +50,7 @@ function App() {
   const [devUsername, setDevUsername] = useState('');
   const [devEmail, setDevEmail] = useState('');
   const [isDevLoggingIn, setIsDevLoggingIn] = useState(false);
+  const showAuthProviderDebug = import.meta.env.DEV;
 
   const clearNotices = () => {
     setError('');
@@ -66,8 +73,20 @@ function App() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('authError')) {
-      setError('Google sign-in failed. Please try again.');
+    const authError = params.get('authError');
+    if (authError) {
+      const errorMessages = {
+        google: 'Google sign-in failed. Please try again.',
+        googleDisabled: 'Google sign-in is not enabled for this environment.',
+        slackDisabled: 'Slack sign-in is not enabled for this environment.',
+        slackDenied: 'Slack sign-in was cancelled.',
+        slackState: 'Slack sign-in session expired. Please try again.',
+        slackToken: 'Unable to complete Slack sign-in. Please try again.',
+        slackProfile: 'Could not read your Slack profile. Please try again.',
+        slackWorkspace: 'You must sign in with an approved Slack workspace.'
+      };
+
+      setError(errorMessages[authError] || 'Sign-in failed. Please try again.');
     }
   }, []);
 
@@ -79,10 +98,12 @@ function App() {
         const response = await api.getCurrentUser();
         if (isMounted) {
           setUser(response.user ?? null);
+          setAuthProviders(response.authProviders ?? DEFAULT_AUTH_PROVIDERS);
         }
       } catch (_apiError) {
         if (isMounted) {
           setUser(null);
+          setAuthProviders(DEFAULT_AUTH_PROVIDERS);
         }
       } finally {
         if (isMounted) {
@@ -292,41 +313,56 @@ function App() {
           </p>
           {error && <p className="mt-4 rounded-lg bg-red-100 px-3 py-2 text-sm text-red-700">{error}</p>}
 
-          <form className="mt-6 space-y-3" onSubmit={handleDevLogin}>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Quick local access</p>
-            <input
-              type="text"
-              placeholder="Your name"
-              value={devUsername}
-              onChange={(event) => setDevUsername(event.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-              maxLength={80}
-            />
-            <input
-              type="email"
-              placeholder="you@example.com"
-              value={devEmail}
-              onChange={(event) => setDevEmail(event.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-            />
+          {authProviders.devLogin ? (
+            <form className="mt-6 space-y-3" onSubmit={handleDevLogin}>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Quick local access</p>
+              <input
+                type="text"
+                placeholder="Your name"
+                value={devUsername}
+                onChange={(event) => setDevUsername(event.target.value)}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                maxLength={80}
+              />
+              <input
+                type="email"
+                placeholder="you@example.com"
+                value={devEmail}
+                onChange={(event) => setDevEmail(event.target.value)}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              />
+              <button
+                type="submit"
+                className="w-full rounded-lg bg-[#007AB7] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#04588C] disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={isDevLoggingIn}
+              >
+                {isDevLoggingIn ? 'Signing in...' : 'Continue with Dev Login'}
+              </button>
+            </form>
+          ) : null}
+
+          {authProviders.devLogin && authProviders.slack ? <div className="my-5 h-px w-full bg-slate-200" /> : null}
+
+          {authProviders.slack ? (
             <button
-              type="submit"
-              className="w-full rounded-lg bg-[#007AB7] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#04588C] disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={isDevLoggingIn}
+              type="button"
+              className="w-full rounded-lg border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              onClick={api.loginWithSlack}
             >
-              {isDevLoggingIn ? 'Signing in...' : 'Continue with Dev Login'}
+              Sign in with Slack
             </button>
-          </form>
+          ) : !authProviders.devLogin ? (
+            <p className="mt-5 rounded-lg bg-amber-100 px-3 py-2 text-sm text-amber-700">
+              No sign-in method is configured. Contact your administrator.
+            </p>
+          ) : null}
 
-          <div className="my-5 h-px w-full bg-slate-200" />
-
-          <button
-            type="button"
-            className="rounded-lg border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-            onClick={api.loginWithGoogle}
-          >
-            Sign in with Google (Optional)
-          </button>
+          {showAuthProviderDebug ? (
+            <p className="mt-4 rounded-lg bg-slate-100 px-3 py-2 text-xs font-medium text-slate-600">
+              Auth providers: dev={String(authProviders.devLogin)}, slack={String(authProviders.slack)}, google=
+              {String(authProviders.google)}
+            </p>
+          ) : null}
         </section>
       </main>
     );
