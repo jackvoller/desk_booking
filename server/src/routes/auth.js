@@ -126,7 +126,13 @@ router.get('/slack', (req, res) => {
     state
   });
 
-  return res.redirect(`${SLACK_AUTHORIZE_URL}?${params.toString()}`);
+  return req.session.save((sessionError) => {
+    if (sessionError) {
+      return redirectAuthError(res, 'slackState');
+    }
+
+    return res.redirect(`${SLACK_AUTHORIZE_URL}?${params.toString()}`);
+  });
 });
 
 router.get('/slack/callback', async (req, res, next) => {

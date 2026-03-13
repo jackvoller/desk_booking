@@ -17,6 +17,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const CLIENT_DIST_PATH = path.resolve(__dirname, '../../client/dist');
 
+if (process.env.NODE_ENV === 'production') {
+  // Required behind Render's proxy so secure session cookies are set correctly.
+  app.set('trust proxy', 1);
+}
+
 async function connectToDatabase() {
   if (!process.env.MONGODB_URI) {
     throw new Error('MONGODB_URI is not configured.');
