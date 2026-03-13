@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --sf-seaside: #007ab7;
+  --sf-indigo: #04588c;
+  --sf-ice: #13c5e2;
+  --sf-smoke: #eaeef1;
+  --sf-pepper: #0d0e20;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: 'Proxima Nova', 'Avenir Next', 'Segoe UI', Arial, sans-serif;
+  background: linear-gradient(180deg, #f8fafc 0%, var(--sf-smoke) 100%);
+  color: var(--sf-pepper);
+}
+
+h1,
+h2,
+h3 {
+  font-family: 'Futura PT', 'Avenir Next', 'Segoe UI', Arial, sans-serif;
+  letter-spacing: 0.01em;
+}
