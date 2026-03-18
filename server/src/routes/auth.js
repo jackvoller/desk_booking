@@ -23,6 +23,10 @@ function getSlackRedirectUri() {
 }
 
 function isDevAuthEnabled() {
+  if (process.env.NODE_ENV === 'production') {
+    return false;
+  }
+
   if (process.env.ENABLE_DEV_AUTH === 'true') {
     return true;
   }
@@ -69,26 +73,6 @@ function redirectAuthError(res, code) {
   const url = new URL(getClientBaseUrl());
   url.searchParams.set('authError', code);
   return res.redirect(url.toString());
-}
-
-function parseJwtClaims(idToken) {
-  if (!idToken || typeof idToken !== 'string') {
-    return {};
-  }
-
-  const parts = idToken.split('.');
-  if (parts.length < 2) {
-    return {};
-  }
-
-  let payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-  payload += '='.repeat((4 - (payload.length % 4)) % 4);
-
-  try {
-    return JSON.parse(Buffer.from(payload, 'base64').toString('utf8'));
-  } catch (_error) {
-    return {};
-  }
 }
 
 function buildUsername(value, email) {
@@ -203,7 +187,6 @@ router.get('/slack/callback', async (req, res, next) => {
       return redirectAuthError(res, 'slackToken');
     }
 
-    const slackClaims = parseJwtClaims(tokenPayload.id_token);
     const userInfoResponse = await fetch(SLACK_USERINFO_URL, {
       headers: {
         Authorization: `Bearer ${tokenPayload.access_token}`
@@ -215,16 +198,10 @@ router.get('/slack/callback', async (req, res, next) => {
       return redirectAuthError(res, 'slackProfile');
     }
 
-    const teamId =
-      userInfoPayload['https://slack.com/team_id'] ?? tokenPayload['https://slack.com/team_id'] ?? slackClaims['https://slack.com/team_id'] ?? '';
-    const orgId =
-      userInfoPayload['https://slack.com/enterprise_id'] ??
-      tokenPayload['https://slack.com/enterprise_id'] ??
-      slackClaims['https://slack.com/enterprise_id'] ??
-      '';
-    const userId =
-      userInfoPayload['https://slack.com/user_id'] ?? tokenPayload['https://slack.com/user_id'] ?? slackClaims['https://slack.com/user_id'] ?? userInfoPayload.sub ?? '';
-    const email = (userInfoPayload.email ?? slackClaims.email ?? '').trim().toLowerCase();
+    const teamId = userInfoPayload['https://slack.com/team_id'] ?? '';
+    const orgId = userInfoPayload['https://slack.com/enterprise_id'] ?? '';
+    const userId = userInfoPayload['https://slack.com/user_id'] ?? userInfoPayload.sub ?? '';
+    const email = (userInfoPayload.email ?? '').trim().toLowerCase();
     const username = buildUsername(
       userInfoPayload.name ?? `${userInfoPayload.given_name ?? ''} ${userInfoPayload.family_name ?? ''}`,
       email

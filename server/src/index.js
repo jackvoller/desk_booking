@@ -22,6 +22,19 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+function getSessionSecret() {
+  const secret = process.env.SESSION_SECRET;
+  if (secret && secret.trim()) {
+    return secret;
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('SESSION_SECRET must be configured in production.');
+  }
+
+  return 'dev-session-secret';
+}
+
 function resolveClientDistPath() {
   const candidates = [
     path.resolve(__dirname, '../public'),
@@ -71,7 +84,7 @@ app.use(express.json());
 app.use(
   session({
     name: 'desk-booking.sid',
-    secret: process.env.SESSION_SECRET || 'dev-session-secret',
+    secret: getSessionSecret(),
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({

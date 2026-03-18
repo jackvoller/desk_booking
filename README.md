@@ -72,6 +72,11 @@ Common flags:
 - `ENABLE_DEV_AUTH=true|false`
 - `NODE_ENV=production`
 
+Security notes:
+
+- `SESSION_SECRET` is required in production.
+- Development login is always disabled in production.
+
 To remove Quick Local Access from the login page in production, set:
 
 - `ENABLE_DEV_AUTH=false`
