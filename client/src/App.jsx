@@ -16,29 +16,6 @@ const DEFAULT_AUTH_PROVIDERS = {
   google: false
 };
 
-function SlackLogo() {
-  return (
-    <svg viewBox="0 0 122.8 122.8" className="h-5 w-5" aria-hidden="true">
-      <path
-        fill="#E01E5A"
-        d="M30.7 77.6c0 8.5-6.9 15.4-15.4 15.4S0 86.1 0 77.6s6.9-15.4 15.4-15.4h15.3v15.4Zm7.7 0c0-8.5 6.9-15.4 15.4-15.4s15.4 6.9 15.4 15.4v38.4c0 8.5-6.9 15.4-15.4 15.4s-15.4-6.9-15.4-15.4V77.6Z"
-      />
-      <path
-        fill="#36C5F0"
-        d="M46.1 30.7c-8.5 0-15.4-6.9-15.4-15.4S37.6 0 46.1 0s15.4 6.9 15.4 15.4v15.3H46.1Zm0 7.7c8.5 0 15.4 6.9 15.4 15.4s-6.9 15.4-15.4 15.4H7.7C3.5 69.2 0 65.7 0 61.5s3.5-7.7 7.7-7.7h38.4Z"
-      />
-      <path
-        fill="#2EB67D"
-        d="M92.2 46.1c0-8.5 6.9-15.4 15.4-15.4s15.4 6.9 15.4 15.4-6.9 15.4-15.4 15.4H92.2V46.1Zm-7.7 0c0 8.5-6.9 15.4-15.4 15.4s-15.4-6.9-15.4-15.4V7.7C53.8 3.5 57.2 0 61.5 0s7.7 3.5 7.7 7.7v38.4h15.3Z"
-      />
-      <path
-        fill="#ECB22E"
-        d="M76.8 92.2c8.5 0 15.4 6.9 15.4 15.4S85.3 123 76.8 123s-15.4-6.9-15.4-15.4V92.2h15.4Zm0-7.7c-8.5 0-15.4-6.9-15.4-15.4s6.9-15.4 15.4-15.4h38.4c4.3 0 7.7 3.5 7.7 7.7s-3.5 7.7-7.7 7.7H76.8v15.4Z"
-      />
-    </svg>
-  );
-}
-
 function findNearestWeekday(dateString, dayOffset) {
   const step = dayOffset >= 0 ? 1 : -1;
   let candidate = addDays(dateString, dayOffset);
@@ -468,7 +445,7 @@ function App() {
                     onClick={api.loginWithSlack}
                   >
                     <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-white">
-                      <SlackLogo />
+                      <img src="/slack.png" alt="Slack" className="h-5 w-5 object-contain" />
                     </span>
                     <span className="text-base font-semibold leading-none">Continue with Slack</span>
                   </button>
