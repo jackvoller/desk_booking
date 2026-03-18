@@ -441,13 +441,16 @@ function App() {
                 {authProviders.slack ? (
                   <button
                     type="button"
-                    className="mt-7 inline-flex w-full items-center justify-center gap-3 rounded-xl bg-[#1F4770] px-4 py-3 text-white transition hover:bg-[#17385a]"
+                    className="mt-7 inline-flex w-full items-center justify-center rounded-xl border border-[#1F4770]/20 bg-transparent px-1 py-1 transition hover:opacity-95"
                     onClick={api.loginWithSlack}
+                    aria-label="Sign in with Slack"
                   >
-                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-white">
-                      <img src="/slack.png" alt="Slack" className="h-5 w-5 object-contain" />
-                    </span>
-                    <span className="text-base font-semibold leading-none">Continue with Slack</span>
+                    <img
+                      src="https://platform.slack-edge.com/img/sign_in_with_slack.png"
+                      srcSet="https://platform.slack-edge.com/img/sign_in_with_slack.png 1x, https://platform.slack-edge.com/img/sign_in_with_slack.png 2x"
+                      alt="Sign in with Slack"
+                      className="h-10 w-auto"
+                    />
                   </button>
                 ) : !authProviders.devLogin ? (
                   <p className="mt-5 rounded-lg bg-amber-100 px-3 py-2 text-sm text-amber-700">
