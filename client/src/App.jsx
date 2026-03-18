@@ -364,7 +364,7 @@ function App() {
             </aside>
 
             <div className="p-6 sm:p-8 md:p-9">
-              <div className="max-w-[28rem]">
+              <div className="w-full">
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#4A76B1]">Workspace Management</p>
                 <h1 className="mt-4 text-3xl font-semibold leading-[1.1] text-[#1F4770] sm:text-4xl">
                   Your desk is
