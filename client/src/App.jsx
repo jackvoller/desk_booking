@@ -17,22 +17,22 @@ const DEFAULT_AUTH_PROVIDERS = {
 
 function SlackLogo() {
   return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+    <svg viewBox="0 0 122.8 122.8" className="h-5 w-5" aria-hidden="true">
+      <path
+        fill="#E01E5A"
+        d="M30.7 77.6c0 8.5-6.9 15.4-15.4 15.4S0 86.1 0 77.6s6.9-15.4 15.4-15.4h15.3v15.4Zm7.7 0c0-8.5 6.9-15.4 15.4-15.4s15.4 6.9 15.4 15.4v38.4c0 8.5-6.9 15.4-15.4 15.4s-15.4-6.9-15.4-15.4V77.6Z"
+      />
       <path
         fill="#36C5F0"
-        d="M9.72 3a2.28 2.28 0 1 1-4.56 0 2.28 2.28 0 0 1 4.56 0Zm0 1.38v5.7a2.28 2.28 0 1 1-4.56 0v-5.7h4.56Z"
+        d="M46.1 30.7c-8.5 0-15.4-6.9-15.4-15.4S37.6 0 46.1 0s15.4 6.9 15.4 15.4v15.3H46.1Zm0 7.7c8.5 0 15.4 6.9 15.4 15.4s-6.9 15.4-15.4 15.4H7.7C3.5 69.2 0 65.7 0 61.5s3.5-7.7 7.7-7.7h38.4Z"
       />
       <path
         fill="#2EB67D"
-        d="M21 9.72a2.28 2.28 0 1 1 0-4.56 2.28 2.28 0 0 1 0 4.56Zm-1.38 0h-5.7a2.28 2.28 0 1 1 0-4.56h5.7v4.56Z"
+        d="M92.2 46.1c0-8.5 6.9-15.4 15.4-15.4s15.4 6.9 15.4 15.4-6.9 15.4-15.4 15.4H92.2V46.1Zm-7.7 0c0 8.5-6.9 15.4-15.4 15.4s-15.4-6.9-15.4-15.4V7.7C53.8 3.5 57.2 0 61.5 0s7.7 3.5 7.7 7.7v38.4h15.3Z"
       />
       <path
         fill="#ECB22E"
-        d="M14.28 21a2.28 2.28 0 1 1 4.56 0 2.28 2.28 0 0 1-4.56 0Zm0-1.38v-5.7a2.28 2.28 0 1 1 4.56 0v5.7h-4.56Z"
-      />
-      <path
-        fill="#E01E5A"
-        d="M3 14.28a2.28 2.28 0 1 1 0 4.56 2.28 2.28 0 0 1 0-4.56Zm1.38 0h5.7a2.28 2.28 0 1 1 0 4.56h-5.7v-4.56Z"
+        d="M76.8 92.2c8.5 0 15.4 6.9 15.4 15.4S85.3 123 76.8 123s-15.4-6.9-15.4-15.4V92.2h15.4Zm0-7.7c-8.5 0-15.4-6.9-15.4-15.4s6.9-15.4 15.4-15.4h38.4c4.3 0 7.7 3.5 7.7 7.7s-3.5 7.7-7.7 7.7H76.8v15.4Z"
       />
     </svg>
   );
@@ -336,16 +336,22 @@ function App() {
           <div className="absolute bottom-[-120px] right-[-160px] h-[360px] w-[360px] rounded-full bg-[#3B79B8]/80" />
         </div>
 
-        <section className="relative z-10 w-full max-w-4xl overflow-hidden rounded-3xl border border-white/70 bg-white/95 shadow-2xl backdrop-blur-sm">
-          <div className="grid md:grid-cols-[32%_68%]">
+        <section className="relative z-10 w-full max-w-[54rem] overflow-hidden rounded-3xl border border-white/70 bg-white/95 shadow-2xl backdrop-blur-sm">
+          <div className="grid md:grid-cols-[285px_1fr]">
             <aside className="relative min-h-[190px] overflow-hidden bg-[#80AFC7] md:min-h-full">
               <div className="absolute inset-0">
-                <div className="absolute inset-x-0 top-0 h-[38%] bg-[#85B2CA]" />
-                <div className="absolute bottom-0 left-0 h-[37%] w-full bg-[#4a79b5]" />
-                <div className="absolute bottom-0 right-0 h-[70%] w-[50%] bg-[#1f4770]" />
-                <div className="absolute right-[-16%] top-[24%] h-48 w-48 rounded-full bg-[#4a76b1]" />
-                <div className="absolute bottom-[6%] right-[12%] h-20 w-20 rounded-full bg-[#98bccd]" />
-                <div className="absolute bottom-0 left-0 h-[34%] w-[50%] bg-[#214a73]" />
+                <div className="absolute inset-x-0 top-0 h-[29%] bg-[#6BB4CD]" />
+                <div className="absolute inset-x-0 top-[29%] h-[19%] bg-[#3C79B7]" />
+                <div className="absolute inset-x-0 top-[48%] h-[25%] bg-[#1F66A7]" />
+                <div className="absolute inset-x-0 bottom-0 h-[27%] bg-[#6AB5CF]" />
+                <div className="absolute right-0 top-0 h-[64%] w-[43%] bg-[#0A4A6A]" />
+                <div className="absolute right-[-37%] top-[20%] h-52 w-52 rounded-full bg-[#4B76B1]" />
+                <div className="absolute right-[-66%] top-[31%] h-56 w-56 rounded-full border-[48px] border-[#6CB7D0]" />
+                <div className="absolute left-0 top-[48%] h-[25%] w-full bg-[linear-gradient(140deg,#1F66A7_0%,#1F66A7_50%,#3C79B7_50%,#3C79B7_100%)]" />
+                <div className="absolute bottom-0 left-0 h-[27%] w-full bg-[linear-gradient(140deg,#6AB5CF_0%,#6AB5CF_46%,#3CB3CE_46%,#3CB3CE_68%,#6AB5CF_68%,#6AB5CF_100%)]" />
+                <div className="absolute bottom-0 right-0 h-[27%] w-[56%] bg-[linear-gradient(140deg,#6AB5CF_0%,#6AB5CF_55%,#3B79B8_55%,#3B79B8_100%)]" />
+                <div className="absolute left-[18%] top-[64%] h-14 w-14 rounded-full bg-white/90" />
+                <div className="absolute bottom-[7%] right-[11%] h-16 w-16 rounded-full bg-[#1B66A8]" />
               </div>
               <div className="absolute bottom-6 left-6 text-white/70">
                 <svg viewBox="0 0 64 64" className="h-8 w-8" aria-hidden="true">
@@ -358,89 +364,92 @@ function App() {
             </aside>
 
             <div className="p-6 sm:p-8 md:p-9">
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#4A76B1]">Workspace Management</p>
-              <h1 className="mt-4 text-3xl font-semibold leading-[1.1] text-[#1F4770] sm:text-4xl">
-                Your desk is
-                <span className="block text-[#4A76B1]">waiting.</span>
-              </h1>
-              <p className="mt-5 max-w-xl text-base leading-relaxed text-[#5D708B] sm:text-lg">
-                Reserve your spot at the Silverfin UK office and collaborate with your team in person.
-              </p>
+              <div className="max-w-[28rem]">
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#4A76B1]">Workspace Management</p>
+                <h1 className="mt-4 text-3xl font-semibold leading-[1.1] text-[#1F4770] sm:text-4xl">
+                  Your desk is
+                  <span className="block text-[#4A76B1]">waiting.</span>
+                </h1>
+                <p className="mt-5 max-w-[42ch] text-base leading-relaxed text-[#5D708B] sm:text-[1.1rem]">
+                  Reserve your spot at the Silverfin UK office and
+                  <br className="hidden md:block" /> collaborate with your team in person.
+                </p>
 
-              <div className="mt-6 flex flex-wrap gap-2">
-                <span className="inline-flex items-center gap-2 rounded-full border border-[#d8dee7] bg-[#f2f4f8] px-4 py-2 text-sm font-semibold text-[#40526b]">
-                  <svg viewBox="0 0 24 24" className="h-4 w-4 text-[#4A76B1]" aria-hidden="true">
-                    <rect x="3.5" y="5.5" width="17" height="15" rx="2.5" fill="none" stroke="currentColor" strokeWidth="2" />
-                    <line x1="3.5" y1="10" x2="20.5" y2="10" stroke="currentColor" strokeWidth="2" />
-                    <line x1="8" y1="3.5" x2="8" y2="7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                    <line x1="16" y1="3.5" x2="16" y2="7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                  </svg>
-                  Instant Booking
-                </span>
-                <span className="inline-flex items-center gap-2 rounded-full border border-[#d8dee7] bg-[#f2f4f8] px-4 py-2 text-sm font-semibold text-[#40526b]">
-                  <svg viewBox="0 0 24 24" className="h-4 w-4 text-[#4A76B1]" aria-hidden="true">
-                    <circle cx="9" cy="9" r="3.25" fill="none" stroke="currentColor" strokeWidth="2" />
-                    <path d="M3.5 19a5.5 5.5 0 0 1 11 0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                    <circle cx="17.2" cy="10.5" r="2.2" fill="none" stroke="currentColor" strokeWidth="2" />
-                    <path d="M15 18.8c.3-2.1 1.5-3.5 3.7-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                  </svg>
-                  Team Presence
-                </span>
-              </div>
-
-              {error && <p className="mt-5 rounded-lg bg-red-100 px-3 py-2 text-sm text-red-700">{error}</p>}
-
-              {authProviders.slack ? (
-                <button
-                  type="button"
-                  className="mt-7 inline-flex w-full max-w-sm items-center justify-center gap-3 rounded-xl bg-[#1F4770] px-4 py-3 text-white transition hover:bg-[#17385a]"
-                  onClick={api.loginWithSlack}
-                >
-                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-white">
-                    <SlackLogo />
+                <div className="mt-6 flex flex-wrap gap-2">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-[#d8dee7] bg-[#f2f4f8] px-4 py-2 text-sm font-semibold text-[#40526b]">
+                    <svg viewBox="0 0 24 24" className="h-4 w-4 text-[#4A76B1]" aria-hidden="true">
+                      <rect x="3.5" y="5.5" width="17" height="15" rx="2.5" fill="none" stroke="currentColor" strokeWidth="2" />
+                      <line x1="3.5" y1="10" x2="20.5" y2="10" stroke="currentColor" strokeWidth="2" />
+                      <line x1="8" y1="3.5" x2="8" y2="7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                      <line x1="16" y1="3.5" x2="16" y2="7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                    Instant Booking
                   </span>
-                  <span className="text-base font-semibold leading-none">Continue with Slack</span>
-                </button>
-              ) : !authProviders.devLogin ? (
-                <p className="mt-5 rounded-lg bg-amber-100 px-3 py-2 text-sm text-amber-700">
-                  No sign-in method is configured. Contact your administrator.
-                </p>
-              ) : null}
+                  <span className="inline-flex items-center gap-2 rounded-full border border-[#d8dee7] bg-[#f2f4f8] px-4 py-2 text-sm font-semibold text-[#40526b]">
+                    <svg viewBox="0 0 24 24" className="h-4 w-4 text-[#4A76B1]" aria-hidden="true">
+                      <circle cx="9" cy="9" r="3.25" fill="none" stroke="currentColor" strokeWidth="2" />
+                      <path d="M3.5 19a5.5 5.5 0 0 1 11 0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                      <circle cx="17.2" cy="10.5" r="2.2" fill="none" stroke="currentColor" strokeWidth="2" />
+                      <path d="M15 18.8c.3-2.1 1.5-3.5 3.7-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                    Team Presence
+                  </span>
+                </div>
 
-              {authProviders.devLogin ? (
-                <form className="mt-6 space-y-3" onSubmit={handleDevLogin}>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[#3C6283]">Quick local access</p>
-                  <input
-                    type="text"
-                    placeholder="Your name"
-                    value={devUsername}
-                    onChange={(event) => setDevUsername(event.target.value)}
-                    className="w-full rounded-lg border border-[#9FCFDD] bg-white px-3 py-2 text-sm text-[#0D2440] placeholder:text-[#4C6A85] focus:border-[#1F67A5] focus:outline-none focus:ring-2 focus:ring-[#70BCD2]/40"
-                    maxLength={80}
-                  />
-                  <input
-                    type="email"
-                    placeholder="you@example.com"
-                    value={devEmail}
-                    onChange={(event) => setDevEmail(event.target.value)}
-                    className="w-full rounded-lg border border-[#9FCFDD] bg-white px-3 py-2 text-sm text-[#0D2440] placeholder:text-[#4C6A85] focus:border-[#1F67A5] focus:outline-none focus:ring-2 focus:ring-[#70BCD2]/40"
-                  />
+                {error && <p className="mt-5 rounded-lg bg-red-100 px-3 py-2 text-sm text-red-700">{error}</p>}
+
+                {authProviders.slack ? (
                   <button
-                    type="submit"
-                    className="w-full rounded-lg bg-[#1F67A5] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0A4A6A] disabled:cursor-not-allowed disabled:opacity-60"
-                    disabled={isDevLoggingIn}
+                    type="button"
+                    className="mt-7 inline-flex w-full items-center justify-center gap-3 rounded-xl bg-[#1F4770] px-4 py-3 text-white transition hover:bg-[#17385a]"
+                    onClick={api.loginWithSlack}
                   >
-                    {isDevLoggingIn ? 'Signing in...' : 'Continue with Dev Login'}
+                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-white">
+                      <SlackLogo />
+                    </span>
+                    <span className="text-base font-semibold leading-none">Continue with Slack</span>
                   </button>
-                </form>
-              ) : null}
+                ) : !authProviders.devLogin ? (
+                  <p className="mt-5 rounded-lg bg-amber-100 px-3 py-2 text-sm text-amber-700">
+                    No sign-in method is configured. Contact your administrator.
+                  </p>
+                ) : null}
 
-              {showAuthProviderDebug ? (
-                <p className="mt-4 rounded-lg bg-[#E8F5FA] px-3 py-2 text-xs font-medium text-[#3C6283]">
-                  Auth providers: dev={String(authProviders.devLogin)}, slack={String(authProviders.slack)}, google=
-                  {String(authProviders.google)}
-                </p>
-              ) : null}
+                {authProviders.devLogin ? (
+                  <form className="mt-6 space-y-3" onSubmit={handleDevLogin}>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[#3C6283]">Quick local access</p>
+                    <input
+                      type="text"
+                      placeholder="Your name"
+                      value={devUsername}
+                      onChange={(event) => setDevUsername(event.target.value)}
+                      className="w-full rounded-lg border border-[#9FCFDD] bg-white px-3 py-2 text-sm text-[#0D2440] placeholder:text-[#4C6A85] focus:border-[#1F67A5] focus:outline-none focus:ring-2 focus:ring-[#70BCD2]/40"
+                      maxLength={80}
+                    />
+                    <input
+                      type="email"
+                      placeholder="you@example.com"
+                      value={devEmail}
+                      onChange={(event) => setDevEmail(event.target.value)}
+                      className="w-full rounded-lg border border-[#9FCFDD] bg-white px-3 py-2 text-sm text-[#0D2440] placeholder:text-[#4C6A85] focus:border-[#1F67A5] focus:outline-none focus:ring-2 focus:ring-[#70BCD2]/40"
+                    />
+                    <button
+                      type="submit"
+                      className="w-full rounded-lg bg-[#1F67A5] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0A4A6A] disabled:cursor-not-allowed disabled:opacity-60"
+                      disabled={isDevLoggingIn}
+                    >
+                      {isDevLoggingIn ? 'Signing in...' : 'Continue with Dev Login'}
+                    </button>
+                  </form>
+                ) : null}
+
+                {showAuthProviderDebug ? (
+                  <p className="mt-4 rounded-lg bg-[#E8F5FA] px-3 py-2 text-xs font-medium text-[#3C6283]">
+                    Auth providers: dev={String(authProviders.devLogin)}, slack={String(authProviders.slack)}, google=
+                    {String(authProviders.google)}
+                  </p>
+                ) : null}
+              </div>
             </div>
           </div>
         </section>
@@ -449,7 +458,24 @@ function App() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-7xl px-4 py-6 md:px-6 lg:px-8">
+    <main className="relative min-h-screen overflow-hidden bg-[#3B79B8]">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-0 bg-[#3B79B8]" />
+        <div className="absolute left-0 top-0 h-[32%] w-[44%] bg-[#6BB4CD]" />
+        <div className="absolute left-0 top-[32%] h-[18%] w-[44%] bg-[#3C79B7]" />
+        <div className="absolute left-0 top-[50%] h-[24%] w-[44%] bg-[#1F66A7]" />
+        <div className="absolute left-0 bottom-0 h-[26%] w-full bg-[#6AB5CF]" />
+        <div className="absolute right-0 top-0 h-[52%] w-[52%] bg-[#0A4A6A]/70" />
+        <div className="absolute right-[-10%] top-[10%] h-[48vh] w-[48vh] rounded-full bg-[#4B76B1]/90" />
+        <div className="absolute right-[-25%] top-[18%] h-[56vh] w-[56vh] rounded-full border-[8vh] border-[#6CB7D0]/90" />
+        <div className="absolute left-0 top-[50%] h-[24%] w-full bg-[linear-gradient(140deg,#1F66A7_0%,#1F66A7_46%,#3C79B7_46%,#3C79B7_100%)]" />
+        <div className="absolute left-0 bottom-0 h-[26%] w-full bg-[linear-gradient(140deg,#6AB5CF_0%,#6AB5CF_50%,#3CB3CE_50%,#3CB3CE_74%,#6AB5CF_74%,#6AB5CF_100%)]" />
+        <div className="absolute right-0 bottom-0 h-[26%] w-[54%] bg-[linear-gradient(140deg,#6AB5CF_0%,#6AB5CF_56%,#3B79B8_56%,#3B79B8_100%)]" />
+        <div className="absolute left-[8%] top-[61%] h-20 w-20 rounded-full bg-white/90" />
+        <div className="absolute bottom-[10%] right-[12%] h-24 w-24 rounded-full bg-[#1B66A8]/95" />
+      </div>
+
+      <div className="relative z-10 mx-auto w-full max-w-7xl px-4 py-6 md:px-6 lg:px-8">
       <header className="rounded-2xl border border-slate-200 bg-white p-4 shadow-lg md:p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
@@ -581,6 +607,7 @@ function App() {
         onConfirm={handleConfirmDeskAction}
         isSubmitting={isSubmitting}
       />
+      </div>
     </main>
   );
 }
