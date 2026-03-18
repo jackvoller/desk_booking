@@ -37,6 +37,9 @@ export const api = {
   getBookingsByDate(date) {
     return request(`/api/bookings?date=${date}`);
   },
+  getMyBookings() {
+    return request('/api/bookings/mine');
+  },
   createBooking(deskId, date) {
     return request('/api/bookings', {
       method: 'POST',

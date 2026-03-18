@@ -134,6 +134,23 @@ router.get('/month', async (req, res, next) => {
   }
 });
 
+router.get('/mine', async (req, res, next) => {
+  try {
+    const bookings = await Booking.find({
+      userId: req.user.id
+    })
+      .where('deskId')
+      .in(DESK_IDS)
+      .select('deskId userId username email date')
+      .sort({ date: 1, deskId: 1 })
+      .lean();
+
+    return res.json({ bookings });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 router.post('/', async (req, res, next) => {
   try {
     const { deskId, date } = req.body;

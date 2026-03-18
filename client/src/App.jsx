@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import BookingModal from './components/BookingModal';
 import FloorPlan from './components/FloorPlan';
+import MyBookings from './components/MyBookings';
 import MonthlyCalendar from './components/MonthlyCalendar';
 import { DESKS } from './config/floorPlanSchema';
 import { api } from './utils/api';
@@ -64,6 +65,8 @@ function App() {
 
   const [bookings, setBookings] = useState([]);
   const [dayCounts, setDayCounts] = useState({});
+  const [myBookings, setMyBookings] = useState([]);
+  const [isMyBookingsLoading, setIsMyBookingsLoading] = useState(false);
 
   const [pendingAction, setPendingAction] = useState(null);
 
@@ -92,6 +95,16 @@ function App() {
       nextDayCounts[entry.date] = entry.count;
     });
     setDayCounts(nextDayCounts);
+  }, []);
+
+  const loadMyBookings = useCallback(async () => {
+    setIsMyBookingsLoading(true);
+    try {
+      const response = await api.getMyBookings();
+      setMyBookings(response.bookings ?? []);
+    } finally {
+      setIsMyBookingsLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -162,7 +175,24 @@ function App() {
     });
   }, [user, calendarMonth, loadMonthCounts]);
 
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    loadMyBookings().catch((apiError) => {
+      setError(apiError.message);
+    });
+  }, [user, loadMyBookings]);
+
   const bookingCountToday = useMemo(() => bookings.length, [bookings]);
+  const deskNameById = useMemo(() => {
+    const mapping = {};
+    DESKS.forEach((desk) => {
+      mapping[desk.id] = desk.name;
+    });
+    return mapping;
+  }, []);
   const previousDate = findNearestWeekday(selectedDate, -1);
   const nextDate = findNearestWeekday(selectedDate, 1);
   const canGoPreviousDate = Boolean(previousDate);
@@ -256,7 +286,7 @@ function App() {
       }
 
       setPendingAction(null);
-      await Promise.all([loadBookings(selectedDate), loadMonthCounts(calendarMonth)]);
+      await Promise.all([loadBookings(selectedDate), loadMonthCounts(calendarMonth), loadMyBookings()]);
     } catch (apiError) {
       setError(apiError.message);
     } finally {
@@ -288,6 +318,7 @@ function App() {
     setUser(null);
     setBookings([]);
     setDayCounts({});
+    setMyBookings([]);
     setPendingAction(null);
     setActiveView('desk');
   };
@@ -314,6 +345,38 @@ function App() {
       setError(apiError.message);
     } finally {
       setIsDevLoggingIn(false);
+    }
+  };
+
+  const handleOpenMyBooking = (booking) => {
+    clearNotices();
+    setSelectedDate(booking.date);
+    setCalendarMonth(booking.date.slice(0, 7));
+    setPendingAction(null);
+    setActiveView('desk');
+  };
+
+  const handleDeleteMyBooking = async (booking) => {
+    clearNotices();
+
+    const deskLabel = deskNameById[booking.deskId] ?? booking.deskId;
+    const shouldDelete = window.confirm(`Remove your booking for ${deskLabel} on ${booking.date}?`);
+    if (!shouldDelete) {
+      return;
+    }
+
+    try {
+      await api.deleteBooking(booking.deskId, booking.date);
+      setSuccess(`${deskLabel} booking removed for ${booking.date}.`);
+
+      const refreshTasks = [loadMonthCounts(calendarMonth), loadMyBookings()];
+      if (booking.date === selectedDate) {
+        refreshTasks.push(loadBookings(selectedDate));
+      }
+
+      await Promise.all(refreshTasks);
+    } catch (apiError) {
+      setError(apiError.message);
     }
   };
 
@@ -517,6 +580,17 @@ function App() {
             >
               Desk View
             </button>
+            <button
+              type="button"
+              className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                activeView === 'myBookings'
+                  ? 'bg-white text-[#0D0E20] shadow'
+                  : 'text-slate-600 hover:text-[#0D0E20]'
+              }`}
+              onClick={() => setActiveView('myBookings')}
+            >
+              My Bookings
+            </button>
           </div>
 
           {activeView === 'desk' ? (
@@ -586,7 +660,7 @@ function App() {
             onBookedDeskClick={handleBookedDeskClick}
           />
         </section>
-      ) : (
+      ) : activeView === 'calendar' ? (
         <section className="mt-4">
           <MonthlyCalendar
             month={calendarMonth}
@@ -594,6 +668,16 @@ function App() {
             totalDesks={DESKS.length}
             onMonthChange={setCalendarMonth}
             onDateSelect={handleCalendarDateSelect}
+          />
+        </section>
+      ) : (
+        <section className="mt-4">
+          <MyBookings
+            bookings={myBookings}
+            deskNameById={deskNameById}
+            isLoading={isMyBookingsLoading}
+            onOpenBooking={handleOpenMyBooking}
+            onDeleteBooking={handleDeleteMyBooking}
           />
         </section>
       )}
