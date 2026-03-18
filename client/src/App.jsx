@@ -453,10 +453,8 @@ function App() {
                     aria-label="Sign in with Slack"
                   >
                     <span className="inline-flex items-center justify-center gap-4">
-                      <span className="relative inline-block h-7 w-7 overflow-hidden" aria-hidden="true">
-                        <img src="/slack.png" alt="" className="h-7 w-[76px] max-w-none" />
-                      </span>
-                      <span className="text-xl font-semibold leading-none text-[#111827]">Sign in with Slack</span>
+                      <img src="/slack-logo.png" alt="" aria-hidden="true" className="h-7 w-7 object-contain" />
+                      <span className="text-lg font-semibold leading-none text-[#111827]">Sign in with Slack</span>
                     </span>
                   </button>
                 ) : !authProviders.devLogin ? (
