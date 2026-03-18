@@ -24,6 +24,9 @@ const __dirname = path.dirname(__filename);
 
 function resolveClientDistPath() {
   const candidates = [
+    path.resolve(__dirname, '../public'),
+    path.resolve(process.cwd(), 'server/public'),
+    path.resolve(process.cwd(), 'public'),
     path.resolve(__dirname, '../../client/dist'),
     path.resolve(process.cwd(), 'client/dist'),
     path.resolve(process.cwd(), '../client/dist'),

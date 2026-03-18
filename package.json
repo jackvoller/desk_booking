@@ -4,12 +4,12 @@
   "private": true,
   "scripts": {
     "postinstall": "npm install --prefix server && npm install --prefix client --include=dev",
-    "build": "npm install --prefix server && npm install --prefix client --include=dev && npm run build --prefix client",
+    "build": "npm install --prefix server && npm install --prefix client --include=dev && npm run build --prefix client && mkdir -p server/public && cp -R client/dist/. server/public/",
     "start": "npm run start:koyeb",
     "dev": "npm run dev --prefix server & npm run dev --prefix client",
     "dev:server": "npm run dev --prefix server",
     "dev:client": "npm run dev --prefix client",
-    "build:koyeb": "npm install --prefix server && npm install --prefix client --include=dev && npm run build --prefix client",
-    "start:koyeb": "npm ci --prefix server --omit=dev && ([ -f client/dist/index.html ] || (npm ci --prefix client --include=dev && npm run build --prefix client)) && npm start --prefix server"
+    "build:koyeb": "npm install --prefix server && npm install --prefix client --include=dev && npm run build --prefix client && mkdir -p server/public && cp -R client/dist/. server/public/",
+    "start:koyeb": "npm ci --prefix server --omit=dev && ([ -f server/public/index.html ] || ([ -f client/package.json ] && npm ci --prefix client --include=dev && npm run build --prefix client && mkdir -p server/public && cp -R client/dist/. server/public/)) && npm start --prefix server"
   }
 }
