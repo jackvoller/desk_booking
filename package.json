@@ -5,11 +5,11 @@
   "scripts": {
     "postinstall": "npm install --prefix server && npm install --prefix client --include=dev",
     "build": "npm install --prefix server && npm install --prefix client --include=dev && npm run build --prefix client",
-    "start": "npm run start --prefix server",
+    "start": "npm run start:koyeb",
     "dev": "npm run dev --prefix server & npm run dev --prefix client",
     "dev:server": "npm run dev --prefix server",
     "dev:client": "npm run dev --prefix client",
     "build:koyeb": "npm install --prefix server && npm install --prefix client --include=dev && npm run build --prefix client",
-    "start:koyeb": "npm start --prefix server"
+    "start:koyeb": "npm ci --prefix server --omit=dev && npm start --prefix server"
   }
 }
