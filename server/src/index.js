@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
@@ -6,16 +5,42 @@ import session from 'express-session';
 import MongoStore from 'connect-mongo';
 import passport from 'passport';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { configurePassport } from './config/passport.js';
 import authRoutes from './routes/auth.js';
 import bookingRoutes from './routes/bookings.js';
 
+try {
+  await import('dotenv/config');
+} catch (_error) {
+  // Ignore when dotenv is unavailable in production runtimes.
+}
+
 const PORT = Number(process.env.PORT) || 4000;
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const CLIENT_DIST_PATH = path.resolve(__dirname, '../../client/dist');
+
+function resolveClientDistPath() {
+  const candidates = [
+    path.resolve(__dirname, '../../client/dist'),
+    path.resolve(process.cwd(), 'client/dist'),
+    path.resolve(process.cwd(), '../client/dist'),
+    path.resolve(__dirname, '../client/dist')
+  ];
+
+  for (const candidate of candidates) {
+    const indexFile = path.join(candidate, 'index.html');
+    if (fs.existsSync(indexFile)) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
+const CLIENT_DIST_PATH = resolveClientDistPath();
 
 if (process.env.NODE_ENV === 'production') {
   // Required behind Render's proxy so secure session cookies are set correctly.
@@ -69,10 +94,21 @@ app.use('/auth', authRoutes);
 app.use('/api/bookings', bookingRoutes);
 
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(CLIENT_DIST_PATH));
+  if (CLIENT_DIST_PATH) {
+    app.use(express.static(CLIENT_DIST_PATH));
+  } else {
+    console.error('Frontend build not found. Expected client/dist with index.html.');
+  }
+
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/auth') || req.path === '/health') {
       return next();
+    }
+
+    if (!CLIENT_DIST_PATH) {
+      return res.status(500).json({
+        message: 'Frontend build not found on server.'
+      });
     }
 
     return res.sendFile(path.join(CLIENT_DIST_PATH, 'index.html'));
