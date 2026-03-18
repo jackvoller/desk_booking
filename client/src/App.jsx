@@ -383,7 +383,7 @@ function App() {
           <div className="absolute bottom-[-120px] right-[-160px] h-[360px] w-[360px] rounded-full bg-[#3B79B8]/80" />
         </div>
 
-        <section className="relative z-10 w-full max-w-[50rem] overflow-hidden rounded-3xl border border-white/70 bg-white/95 shadow-2xl backdrop-blur-sm">
+        <section className="relative z-10 w-full max-w-[46rem] overflow-hidden rounded-3xl border border-white/70 bg-white/95 shadow-2xl backdrop-blur-sm">
           <div className="grid md:grid-cols-[285px_1fr]">
             <aside className="relative min-h-[190px] overflow-hidden bg-[#80AFC7] md:min-h-full">
               <div className="absolute inset-0">
