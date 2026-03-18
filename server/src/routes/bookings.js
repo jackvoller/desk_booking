@@ -40,6 +40,17 @@ function isWithinBookingWindow(dateString) {
   return differenceInDays >= 0 && differenceInDays <= MAX_ADVANCE_DAYS;
 }
 
+function isPastDate(dateString) {
+  const targetDate = parseDateOnly(dateString);
+  if (!targetDate) {
+    return false;
+  }
+
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return targetDate.getTime() < today.getTime();
+}
+
 function isWeekend(dateString) {
   const targetDate = parseDateOnly(dateString);
   if (!targetDate) {
@@ -165,6 +176,12 @@ router.post('/', async (req, res, next) => {
 
     if (!date || typeof date !== 'string' || !parseDateOnly(date)) {
       return res.status(400).json({ message: '"date" is required in YYYY-MM-DD format.' });
+    }
+
+    if (isPastDate(date)) {
+      return res.status(400).json({
+        message: 'You cannot book a desk for a past date.'
+      });
     }
 
     if (!isWithinBookingWindow(date)) {
