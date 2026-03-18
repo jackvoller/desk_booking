@@ -327,47 +327,49 @@ function App() {
 
   if (!user) {
     return (
-      <main className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-[#d7e2ea] px-4 py-8">
+      <main className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-[#0A4A6A] px-4 py-8">
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute left-[-120px] top-[-140px] h-72 w-72 rounded-full bg-[#9fcfe0]/55" />
-          <div className="absolute right-[-100px] top-[-80px] h-72 w-72 rounded-full bg-[#8baec6]/45" />
-          <div className="absolute bottom-[-140px] left-[15%] h-80 w-80 rounded-full bg-[#99bfd2]/40" />
+          <div className="absolute inset-0 bg-[linear-gradient(140deg,#0A4A6A_0%,#1F67A5_50%,#70BCD2_100%)]" />
+          <div className="absolute -left-28 top-0 h-80 w-80 rounded-br-[220px] bg-[#73BED4]/75" />
+          <div className="absolute right-[-140px] top-[-80px] h-[420px] w-[420px] rounded-full border-[80px] border-[#3B79B8]/80" />
+          <div className="absolute bottom-[-180px] left-[-120px] h-[420px] w-[420px] rounded-full bg-[#44B2CC]/75" />
+          <div className="absolute bottom-[-120px] right-[-160px] h-[360px] w-[360px] rounded-full bg-[#3B79B8]/80" />
         </div>
 
-        <section className="relative z-10 w-full max-w-6xl overflow-hidden rounded-[2rem] border border-white/70 bg-white/95 shadow-2xl backdrop-blur-sm">
-          <div className="grid md:grid-cols-[34%_66%]">
-            <aside className="relative min-h-[260px] overflow-hidden bg-[#80AFC7] md:min-h-full">
+        <section className="relative z-10 w-full max-w-4xl overflow-hidden rounded-3xl border border-white/70 bg-white/95 shadow-2xl backdrop-blur-sm">
+          <div className="grid md:grid-cols-[32%_68%]">
+            <aside className="relative min-h-[190px] overflow-hidden bg-[#80AFC7] md:min-h-full">
               <div className="absolute inset-0">
                 <div className="absolute inset-x-0 top-0 h-[38%] bg-[#85B2CA]" />
                 <div className="absolute bottom-0 left-0 h-[37%] w-full bg-[#4a79b5]" />
                 <div className="absolute bottom-0 right-0 h-[70%] w-[50%] bg-[#1f4770]" />
-                <div className="absolute right-[-16%] top-[24%] h-64 w-64 rounded-full bg-[#4a76b1]" />
-                <div className="absolute bottom-[2%] right-[12%] h-28 w-28 rounded-full bg-[#98bccd]" />
+                <div className="absolute right-[-16%] top-[24%] h-48 w-48 rounded-full bg-[#4a76b1]" />
+                <div className="absolute bottom-[6%] right-[12%] h-20 w-20 rounded-full bg-[#98bccd]" />
                 <div className="absolute bottom-0 left-0 h-[34%] w-[50%] bg-[#214a73]" />
               </div>
-              <div className="absolute bottom-9 left-9 text-white/70">
-                <svg viewBox="0 0 64 64" className="h-10 w-10" aria-hidden="true">
+              <div className="absolute bottom-6 left-6 text-white/70">
+                <svg viewBox="0 0 64 64" className="h-8 w-8" aria-hidden="true">
                   <rect x="8" y="8" width="48" height="34" rx="6" fill="none" stroke="currentColor" strokeWidth="4" />
                   <line x1="32" y1="42" x2="32" y2="53" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
                   <line x1="20" y1="56" x2="44" y2="56" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
                 </svg>
-                <div className="mt-3 h-2 w-24 rounded-full bg-white/85" />
+                <div className="mt-2 h-1.5 w-20 rounded-full bg-white/85" />
               </div>
             </aside>
 
-            <div className="p-6 sm:p-10 md:p-14">
-              <p className="text-sm font-semibold uppercase tracking-[0.32em] text-[#4A76B1]">Workspace Management</p>
-              <h1 className="mt-5 text-4xl font-semibold leading-[1.05] text-[#1F4770] sm:text-5xl lg:text-6xl">
+            <div className="p-6 sm:p-8 md:p-9">
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#4A76B1]">Workspace Management</p>
+              <h1 className="mt-4 text-3xl font-semibold leading-[1.1] text-[#1F4770] sm:text-4xl">
                 Your desk is
                 <span className="block text-[#4A76B1]">waiting.</span>
               </h1>
-              <p className="mt-8 max-w-2xl text-lg leading-relaxed text-[#5D708B] sm:text-2xl">
+              <p className="mt-5 max-w-xl text-base leading-relaxed text-[#5D708B] sm:text-lg">
                 Reserve your spot at the Silverfin UK office and collaborate with your team in person.
               </p>
 
-              <div className="mt-9 flex flex-wrap gap-3">
-                <span className="inline-flex items-center gap-3 rounded-full border border-[#d8dee7] bg-[#f2f4f8] px-6 py-3 text-[1.02rem] font-semibold text-[#40526b]">
-                  <svg viewBox="0 0 24 24" className="h-5 w-5 text-[#4A76B1]" aria-hidden="true">
+              <div className="mt-6 flex flex-wrap gap-2">
+                <span className="inline-flex items-center gap-2 rounded-full border border-[#d8dee7] bg-[#f2f4f8] px-4 py-2 text-sm font-semibold text-[#40526b]">
+                  <svg viewBox="0 0 24 24" className="h-4 w-4 text-[#4A76B1]" aria-hidden="true">
                     <rect x="3.5" y="5.5" width="17" height="15" rx="2.5" fill="none" stroke="currentColor" strokeWidth="2" />
                     <line x1="3.5" y1="10" x2="20.5" y2="10" stroke="currentColor" strokeWidth="2" />
                     <line x1="8" y1="3.5" x2="8" y2="7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -375,8 +377,8 @@ function App() {
                   </svg>
                   Instant Booking
                 </span>
-                <span className="inline-flex items-center gap-3 rounded-full border border-[#d8dee7] bg-[#f2f4f8] px-6 py-3 text-[1.02rem] font-semibold text-[#40526b]">
-                  <svg viewBox="0 0 24 24" className="h-5 w-5 text-[#4A76B1]" aria-hidden="true">
+                <span className="inline-flex items-center gap-2 rounded-full border border-[#d8dee7] bg-[#f2f4f8] px-4 py-2 text-sm font-semibold text-[#40526b]">
+                  <svg viewBox="0 0 24 24" className="h-4 w-4 text-[#4A76B1]" aria-hidden="true">
                     <circle cx="9" cy="9" r="3.25" fill="none" stroke="currentColor" strokeWidth="2" />
                     <path d="M3.5 19a5.5 5.5 0 0 1 11 0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                     <circle cx="17.2" cy="10.5" r="2.2" fill="none" stroke="currentColor" strokeWidth="2" />
@@ -391,16 +393,13 @@ function App() {
               {authProviders.slack ? (
                 <button
                   type="button"
-                  className="mt-10 flex w-full items-center justify-between rounded-3xl bg-[#1F4770] px-6 py-5 text-left text-white transition hover:bg-[#17385a]"
+                  className="mt-7 inline-flex w-full max-w-sm items-center justify-center gap-3 rounded-xl bg-[#1F4770] px-4 py-3 text-white transition hover:bg-[#17385a]"
                   onClick={api.loginWithSlack}
                 >
-                  <span className="inline-flex items-center gap-4">
-                    <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-white">
-                      <SlackLogo />
-                    </span>
-                    <span className="text-xl font-semibold leading-none sm:text-[2rem]">Continue with Slack</span>
+                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-white">
+                    <SlackLogo />
                   </span>
-                  <span className="text-4xl font-light leading-none sm:text-5xl">→</span>
+                  <span className="text-base font-semibold leading-none">Continue with Slack</span>
                 </button>
               ) : !authProviders.devLogin ? (
                 <p className="mt-5 rounded-lg bg-amber-100 px-3 py-2 text-sm text-amber-700">
