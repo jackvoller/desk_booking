@@ -77,10 +77,14 @@ function PeopleSymbol({ index }) {
   );
 }
 
-function MonthlyCalendar({ month, dayCounts, totalDesks, onMonthChange, onDateSelect }) {
+function MonthlyCalendar({ month, dayCounts, totalDesks, onMonthChange, onDateSelect, minDate, maxDate, minMonth, maxMonth }) {
   const dayCount = getMonthDayCount(month);
   const leadingBlanks = getMonthStartWeekday(month);
   const [year, monthValue] = month.split('-').map(Number);
+  const previousMonth = shiftMonth(month, -1);
+  const nextMonth = shiftMonth(month, 1);
+  const canGoPreviousMonth = !minMonth || previousMonth >= minMonth;
+  const canGoNextMonth = !maxMonth || nextMonth <= maxMonth;
 
   const cells = [
     ...Array.from({ length: leadingBlanks }, (_item, index) => ({ key: `blank-${index}`, blank: true })),
@@ -90,6 +94,9 @@ function MonthlyCalendar({ month, dayCounts, totalDesks, onMonthChange, onDateSe
       const bookedCount = dayCounts[date] || 0;
       const dayOfWeek = new Date(year, monthValue - 1, dayNumber).getDay();
       const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+      const isPast = Boolean(minDate && date < minDate);
+      const isBeyondMax = Boolean(maxDate && date > maxDate);
+      const isOutOfRange = isPast || isBeyondMax;
 
       return {
         key: date,
@@ -97,6 +104,7 @@ function MonthlyCalendar({ month, dayCounts, totalDesks, onMonthChange, onDateSe
         dayNumber,
         bookedCount,
         isWeekend,
+        isOutOfRange,
         blank: false
       };
     })
@@ -107,16 +115,18 @@ function MonthlyCalendar({ month, dayCounts, totalDesks, onMonthChange, onDateSe
       <div className="mb-4 flex items-center justify-between">
         <button
           type="button"
-          className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:border-[#13c5e2] hover:bg-[#e8f8fc]"
-          onClick={() => onMonthChange(shiftMonth(month, -1))}
+          className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:border-[#13c5e2] hover:bg-[#e8f8fc] disabled:cursor-not-allowed disabled:opacity-45"
+          onClick={() => onMonthChange(previousMonth)}
+          disabled={!canGoPreviousMonth}
         >
           Previous
         </button>
         <h2 className="text-lg font-bold text-slate-900">{getMonthLabel(month)}</h2>
         <button
           type="button"
-          className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:border-[#13c5e2] hover:bg-[#e8f8fc]"
-          onClick={() => onMonthChange(shiftMonth(month, 1))}
+          className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:border-[#13c5e2] hover:bg-[#e8f8fc] disabled:cursor-not-allowed disabled:opacity-45"
+          onClick={() => onMonthChange(nextMonth)}
+          disabled={!canGoNextMonth}
         >
           Next
         </button>
@@ -137,6 +147,7 @@ function MonthlyCalendar({ month, dayCounts, totalDesks, onMonthChange, onDateSe
           const hasBookings = cell.bookedCount > 0;
           const peopleSymbolCount = getPeopleSymbolCount(cell.bookedCount, totalDesks);
           const isWeekend = cell.isWeekend;
+          const isDisabledDate = isWeekend || cell.isOutOfRange;
           const baseClass =
             'h-24 rounded-xl border p-2 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300';
           const weekendClass = 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400';
@@ -148,19 +159,19 @@ function MonthlyCalendar({ month, dayCounts, totalDesks, onMonthChange, onDateSe
             <button
               key={cell.key}
               type="button"
-              className={`${baseClass} ${isWeekend ? weekendClass : hasBookings ? bookedDayClass : openDayClass}`}
+              className={`${baseClass} ${isDisabledDate ? weekendClass : hasBookings ? bookedDayClass : openDayClass}`}
               onClick={() => {
-                if (!isWeekend) {
+                if (!isDisabledDate) {
                   onDateSelect(cell.date);
                 }
               }}
-              disabled={isWeekend}
+              disabled={isDisabledDate}
             >
               <div className="flex items-start justify-between">
-                <div className={`text-sm font-semibold ${isWeekend ? 'text-slate-500' : 'text-slate-900'}`}>
+                <div className={`text-sm font-semibold ${isDisabledDate ? 'text-slate-500' : 'text-slate-900'}`}>
                   {cell.dayNumber}
                 </div>
-                {hasBookings && !isWeekend ? (
+                {hasBookings && !isDisabledDate ? (
                   <div className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-emerald-700">
                     {Array.from({ length: peopleSymbolCount }, (_item, index) => (
                       <PeopleSymbol key={index} index={index} />
@@ -168,7 +179,7 @@ function MonthlyCalendar({ month, dayCounts, totalDesks, onMonthChange, onDateSe
                   </div>
                 ) : null}
               </div>
-              {isWeekend ? (
+              {isDisabledDate ? (
                 <div className="mt-2 inline-flex rounded-full bg-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-500">
                   Unavailable
                 </div>

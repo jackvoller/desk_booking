@@ -5,11 +5,13 @@ import MyBookings from './components/MyBookings';
 import MonthlyCalendar from './components/MonthlyCalendar';
 import { DESKS } from './config/floorPlanSchema';
 import { api } from './utils/api';
-import { addDays, isWeekendDate, isWithinAdvanceWindow, todayDateString } from './utils/date';
+import { addDays, isWeekendDate, isWithinAdvanceWindow, shiftMonth, todayDateString } from './utils/date';
 
 const MAX_ADVANCE_DAYS = 30;
 const TODAY = todayDateString();
 const MAX_DATE = addDays(TODAY, MAX_ADVANCE_DAYS);
+const CURRENT_MONTH = TODAY.slice(0, 7);
+const MAX_CALENDAR_MONTH = shiftMonth(CURRENT_MONTH, 1);
 const DEFAULT_AUTH_PROVIDERS = {
   devLogin: true,
   slack: false,
@@ -274,6 +276,11 @@ function App() {
   const handleCalendarDateSelect = (date) => {
     clearNotices();
 
+    if (!isWithinAdvanceWindow(date, MAX_ADVANCE_DAYS)) {
+      setError(`You can only book from today up to ${MAX_ADVANCE_DAYS} days in advance.`);
+      return;
+    }
+
     if (isWeekendDate(date)) {
       setError('Weekend bookings are unavailable. Please choose a weekday.');
       return;
@@ -449,7 +456,7 @@ function App() {
                       src="https://platform.slack-edge.com/img/sign_in_with_slack.png"
                       srcSet="https://platform.slack-edge.com/img/sign_in_with_slack.png 1x, https://platform.slack-edge.com/img/sign_in_with_slack.png 2x"
                       alt="Sign in with Slack"
-                      className="h-10 w-auto"
+                      className="h-auto w-full"
                     />
                   </button>
                 ) : !authProviders.devLogin ? (
@@ -648,6 +655,10 @@ function App() {
             totalDesks={DESKS.length}
             onMonthChange={setCalendarMonth}
             onDateSelect={handleCalendarDateSelect}
+            minDate={TODAY}
+            maxDate={MAX_DATE}
+            minMonth={CURRENT_MONTH}
+            maxMonth={MAX_CALENDAR_MONTH}
           />
         </section>
       ) : (
