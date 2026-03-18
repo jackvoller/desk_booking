@@ -1,3 +1,13 @@
+function getWeekdayLabel(dateString) {
+  const [year, month, day] = (dateString ?? '').split('-').map(Number);
+  if (!year || !month || !day) {
+    return '-';
+  }
+
+  const date = new Date(year, month - 1, day);
+  return date.toLocaleDateString(undefined, { weekday: 'short' });
+}
+
 function MyBookings({ bookings, deskNameById, isLoading, onOpenBooking, onDeleteBooking }) {
   if (isLoading) {
     return (
@@ -26,6 +36,7 @@ function MyBookings({ bookings, deskNameById, isLoading, onOpenBooking, onDelete
           <thead>
             <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
               <th className="px-3 py-2">Date</th>
+              <th className="px-3 py-2">Day</th>
               <th className="px-3 py-2">Desk</th>
               <th className="px-3 py-2">Actions</th>
             </tr>
@@ -34,6 +45,7 @@ function MyBookings({ bookings, deskNameById, isLoading, onOpenBooking, onDelete
             {bookings.map((booking) => (
               <tr key={`${booking.date}-${booking.deskId}`} className="rounded-lg bg-slate-50 text-sm text-slate-700">
                 <td className="rounded-l-lg px-3 py-3 font-medium text-slate-900">{booking.date}</td>
+                <td className="px-3 py-3">{getWeekdayLabel(booking.date)}</td>
                 <td className="px-3 py-3">{deskNameById[booking.deskId] ?? booking.deskId}</td>
                 <td className="rounded-r-lg px-3 py-3">
                   <div className="flex flex-wrap gap-2">
