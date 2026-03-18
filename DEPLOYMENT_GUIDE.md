@@ -145,3 +145,33 @@ Then open app URL and run login test:
   - Missing `SLACK_CLIENT_ID` or `SLACK_CLIENT_SECRET`.
 - Login blocked for workspace:
   - Check `SLACK_ALLOWED_TEAM_ID` and/or `SLACK_ALLOWED_ORG_ID` values.
+
+## Koyeb Quick Setup
+
+If deploying on Koyeb with this monorepo layout (`client/` + `server/`), use:
+
+- Build command:
+
+```bash
+npm run build:koyeb
+```
+
+- Run command:
+
+```bash
+npm run start:koyeb
+```
+
+Required env vars are the same as Render:
+
+- `NODE_ENV=production`
+- `MONGODB_URI`
+- `SESSION_SECRET`
+- `SERVER_BASE_URL=https://<your-koyeb-service-domain>`
+- `CLIENT_BASE_URL=https://<your-koyeb-service-domain>`
+- `SLACK_CLIENT_ID`
+- `SLACK_CLIENT_SECRET`
+- `SLACK_REDIRECT_URI=https://<your-koyeb-service-domain>/auth/slack/callback`
+- optional allowlists:
+  - `SLACK_ALLOWED_TEAM_ID=T...`
+  - `SLACK_ALLOWED_ORG_ID=E...`

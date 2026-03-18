@@ -12,7 +12,7 @@ Desk booking app for internal teams with:
 - `client/`: React UI (`Desk View` and `Calendar View`)
 - `server/`: auth, bookings API, session handling, and production static serving
 - MongoDB Atlas: persistent bookings + session store
-- Render: hosts the web service (`server`) and serves built frontend in production
+- Render or Koyeb: hosts the web service (`server`) and serves built frontend in production
 - Slack App: handles user login via OpenID Connect (`openid profile email`)
 
 ## Features
