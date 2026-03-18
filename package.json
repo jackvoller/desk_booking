@@ -10,6 +10,6 @@
     "dev:server": "npm run dev --prefix server",
     "dev:client": "npm run dev --prefix client",
     "build:koyeb": "npm install --prefix server && npm install --prefix client --include=dev && npm run build --prefix client",
-    "start:koyeb": "npm ci --prefix server --omit=dev && npm start --prefix server"
+    "start:koyeb": "npm ci --prefix server --omit=dev && ([ -f client/dist/index.html ] || (npm ci --prefix client --include=dev && npm run build --prefix client)) && npm start --prefix server"
   }
 }
