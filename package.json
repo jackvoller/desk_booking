@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "postinstall": "npm install --prefix server && npm install --prefix client --include=dev",
-    "build": "npm run build --prefix client",
+    "build": "npm install --prefix server && npm install --prefix client --include=dev && npm run build --prefix client",
     "start": "npm run start --prefix server",
     "dev": "npm run dev --prefix server & npm run dev --prefix client",
     "dev:server": "npm run dev --prefix server",
