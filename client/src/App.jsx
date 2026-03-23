@@ -165,6 +165,14 @@ function App() {
   }, [user, loadMyBookings]);
 
   const bookingCountToday = useMemo(() => bookings.length, [bookings]);
+  const myBookingForSelectedDate = useMemo(() => {
+    if (!user?.id) {
+      return null;
+    }
+
+    return bookings.find((booking) => booking.userId === user.id) ?? null;
+  }, [bookings, user?.id]);
+
   const deskNameById = useMemo(() => {
     const mapping = {};
     DESKS.forEach((desk) => {
@@ -215,6 +223,12 @@ function App() {
 
   const handleAvailableDeskClick = (desk) => {
     clearNotices();
+
+    if (myBookingForSelectedDate) {
+      const deskLabel = deskNameById[myBookingForSelectedDate.deskId] ?? myBookingForSelectedDate.deskId;
+      setError(`You already booked ${deskLabel} on ${selectedDate}. You can only book one desk per day.`);
+      return;
+    }
 
     if (!isWithinAdvanceWindow(selectedDate, MAX_ADVANCE_DAYS)) {
       setError(`Bookings are limited to a ${MAX_ADVANCE_DAYS}-day window.`);

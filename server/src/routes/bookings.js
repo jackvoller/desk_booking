@@ -196,6 +196,25 @@ router.post('/', async (req, res, next) => {
       });
     }
 
+    const existingUserBooking = await Booking.findOne({
+      userId: req.user.id,
+      date
+    })
+      .select('deskId')
+      .lean();
+
+    if (existingUserBooking) {
+      if (existingUserBooking.deskId === deskId) {
+        return res.status(409).json({
+          message: 'You already booked this desk for the selected date.'
+        });
+      }
+
+      return res.status(409).json({
+        message: `You already have a desk booking (${existingUserBooking.deskId}) for this date. You can only book one desk per day.`
+      });
+    }
+
     const booking = await Booking.create({
       deskId,
       date,
@@ -216,6 +235,12 @@ router.post('/', async (req, res, next) => {
     });
   } catch (error) {
     if (error?.code === 11000) {
+      if (error?.keyPattern?.userId && error?.keyPattern?.date) {
+        return res.status(409).json({
+          message: 'You can only have one desk booking per day.'
+        });
+      }
+
       return res.status(409).json({
         message: 'That desk is already booked for the selected date.'
       });
