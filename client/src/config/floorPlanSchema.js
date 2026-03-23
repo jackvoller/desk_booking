@@ -21,11 +21,7 @@ export const DESKS = [
   // Right pod
   { id: 'R1', name: 'Desk R1', x: 970, y: 250, width: 90, height: 120, chairPosition: 'left' },
   { id: 'R2', name: 'Desk R2', x: 1080, y: 210, width: 120, height: 90, chairPosition: 'top' },
-  { id: 'R3', name: 'Desk R3', x: 1080, y: 320, width: 120, height: 90, chairPosition: 'bottom' },
-
-  // Bottom-right pod
-  { id: 'B1', name: 'Desk B1', x: 1080, y: 485, width: 120, height: 90, chairPosition: 'top' },
-  { id: 'B2', name: 'Desk B2', x: 1080, y: 595, width: 120, height: 90, chairPosition: 'bottom' }
+  { id: 'R3', name: 'Desk R3', x: 1080, y: 320, width: 120, height: 90, chairPosition: 'bottom' }
 ];
 
 export const CHAIRS = [
@@ -43,7 +39,5 @@ export const CHAIRS = [
   { x: 825, y: 400, rotation: 90 },
   { x: 950, y: 310, rotation: 270 },
   { x: 1140, y: 190, rotation: 0 },
-  { x: 1140, y: 430, rotation: 180 },
-  { x: 1140, y: 465, rotation: 0 },
-  { x: 1140, y: 705, rotation: 180 }
+  { x: 1140, y: 430, rotation: 180 }
 ];

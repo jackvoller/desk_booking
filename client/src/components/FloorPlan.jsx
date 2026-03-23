@@ -178,6 +178,16 @@ function FloorPlan({ bookings, onAvailableDeskClick, onBookedDeskClick }) {
           <Chair key={`chair-${index}`} x={chair.x} y={chair.y} rotation={chair.rotation} />
         ))}
 
+        <g aria-hidden="true" opacity="0.9">
+          <rect x="1035" y="528" width="170" height="58" rx="20" fill="#CBD5E1" stroke="#94A3B8" strokeWidth="2" />
+          <rect x="1048" y="514" width="144" height="20" rx="10" fill="#E2E8F0" stroke="#94A3B8" strokeWidth="1.5" />
+          <rect x="1044" y="579" width="18" height="12" rx="4" fill="#94A3B8" opacity="0.55" />
+          <rect x="1178" y="579" width="18" height="12" rx="4" fill="#94A3B8" opacity="0.55" />
+          <circle cx="1118" cy="648" r="26" fill="#D1D5DB" stroke="#94A3B8" strokeWidth="2" />
+          <line x1="1118" y1="674" x2="1118" y2="686" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
+          <line x1="1108" y1="686" x2="1128" y2="686" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
+        </g>
+
         {DESKS.map((desk) => {
           const booking = bookingsByDesk[desk.id];
           const isBooked = Boolean(booking);

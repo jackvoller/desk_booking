@@ -13,9 +13,7 @@ export const DESK_IDS = [
   'C6',
   'R1',
   'R2',
-  'R3',
-  'B1',
-  'B2'
+  'R3'
 ];
 
 export const DESK_ID_SET = new Set(DESK_IDS);
