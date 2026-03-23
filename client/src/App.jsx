@@ -737,37 +737,40 @@ function App() {
 
       <section className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-lg md:p-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="inline-flex rounded-xl bg-[#eaeef1] p-1">
+          <div className="grid w-full grid-cols-3 rounded-xl bg-[#eaeef1] p-1 md:inline-flex md:w-auto">
             <button
               type="button"
-              className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+              className={`min-w-0 rounded-lg px-2 py-2 text-center text-xs font-semibold transition sm:px-4 sm:text-sm ${
                 activeView === 'calendar'
                   ? 'bg-white text-[#0D0E20] shadow'
                   : 'text-slate-600 hover:text-[#0D0E20]'
               }`}
               onClick={() => setActiveView('calendar')}
             >
-              Calendar View
+              <span className="sm:hidden">Calendar</span>
+              <span className="hidden sm:inline">Calendar View</span>
             </button>
             <button
               type="button"
-              className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+              className={`min-w-0 rounded-lg px-2 py-2 text-center text-xs font-semibold transition sm:px-4 sm:text-sm ${
                 activeView === 'desk' ? 'bg-white text-[#0D0E20] shadow' : 'text-slate-600 hover:text-[#0D0E20]'
               }`}
               onClick={() => setActiveView('desk')}
             >
-              Desk View
+              <span className="sm:hidden">Desk</span>
+              <span className="hidden sm:inline">Desk View</span>
             </button>
             <button
               type="button"
-              className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+              className={`min-w-0 rounded-lg px-2 py-2 text-center text-xs font-semibold transition sm:px-4 sm:text-sm ${
                 activeView === 'myBookings'
                   ? 'bg-white text-[#0D0E20] shadow'
                   : 'text-slate-600 hover:text-[#0D0E20]'
               }`}
               onClick={() => setActiveView('myBookings')}
             >
-              {user?.isAdmin ? 'All Bookings' : 'My Bookings'}
+              <span className="sm:hidden">{user?.isAdmin ? 'All' : 'My'}</span>
+              <span className="hidden sm:inline">{user?.isAdmin ? 'All Bookings' : 'My Bookings'}</span>
             </button>
           </div>
 
@@ -850,6 +853,7 @@ function App() {
             maxDate={MAX_DATE}
             minMonth={CURRENT_MONTH}
             maxMonth={MAX_CALENDAR_MONTH}
+            selectedDate={selectedDate}
           />
         </section>
       ) : (
