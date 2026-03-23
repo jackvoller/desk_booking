@@ -9,7 +9,7 @@
     "dev": "npm run dev --prefix server & npm run dev --prefix client",
     "dev:server": "npm run dev --prefix server",
     "dev:client": "npm run dev --prefix client",
-    "build:koyeb": "npm install --prefix server && npm install --prefix client --include=dev && npm run build --prefix client && mkdir -p server/public && cp -R client/dist/. server/public/",
-    "start:koyeb": "npm install --prefix server --omit=dev && ( [ -f server/public/index.html ] || (npm install --prefix client --include=dev && npm run build --prefix client && mkdir -p server/public && cp -R client/dist/. server/public/) ) && npm start --prefix server"
+    "build:koyeb": "npm install --prefix server --omit=dev && npm install --prefix client --include=dev && npm run build --prefix client && mkdir -p server/public && cp -R client/dist/. server/public/",
+    "start:koyeb": "npm start --prefix server"
   }
 }
