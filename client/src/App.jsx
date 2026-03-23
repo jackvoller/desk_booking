@@ -740,7 +740,7 @@ function App() {
           <div className="grid w-full grid-cols-3 rounded-xl bg-[#eaeef1] p-1 md:inline-flex md:w-auto">
             <button
               type="button"
-              className={`min-w-0 rounded-lg px-2 py-2 text-center text-xs font-semibold transition sm:px-4 sm:text-sm ${
+              className={`min-w-0 rounded-lg px-2 py-2 text-center text-[13px] font-semibold leading-tight transition sm:px-4 sm:text-sm ${
                 activeView === 'calendar'
                   ? 'bg-white text-[#0D0E20] shadow'
                   : 'text-slate-600 hover:text-[#0D0E20]'
@@ -752,7 +752,7 @@ function App() {
             </button>
             <button
               type="button"
-              className={`min-w-0 rounded-lg px-2 py-2 text-center text-xs font-semibold transition sm:px-4 sm:text-sm ${
+              className={`min-w-0 rounded-lg px-2 py-2 text-center text-[13px] font-semibold leading-tight transition sm:px-4 sm:text-sm ${
                 activeView === 'desk' ? 'bg-white text-[#0D0E20] shadow' : 'text-slate-600 hover:text-[#0D0E20]'
               }`}
               onClick={() => setActiveView('desk')}
@@ -762,14 +762,14 @@ function App() {
             </button>
             <button
               type="button"
-              className={`min-w-0 rounded-lg px-2 py-2 text-center text-xs font-semibold transition sm:px-4 sm:text-sm ${
+              className={`min-w-0 rounded-lg px-2 py-2 text-center text-[13px] font-semibold leading-tight transition sm:px-4 sm:text-sm ${
                 activeView === 'myBookings'
                   ? 'bg-white text-[#0D0E20] shadow'
                   : 'text-slate-600 hover:text-[#0D0E20]'
               }`}
               onClick={() => setActiveView('myBookings')}
             >
-              <span className="sm:hidden">{user?.isAdmin ? 'All' : 'My'}</span>
+              <span className="sm:hidden">Bookings</span>
               <span className="hidden sm:inline">{user?.isAdmin ? 'All Bookings' : 'My Bookings'}</span>
             </button>
           </div>
