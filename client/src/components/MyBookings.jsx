@@ -16,7 +16,7 @@ function getTodayDateKey() {
   return `${year}-${month}-${day}`;
 }
 
-function BookingTable({ bookings, deskNameById, onOpenBooking, onDeleteBooking }) {
+function BookingTable({ bookings, deskNameById, onOpenBooking, onDeleteBooking, isAdmin }) {
   if (!bookings.length) {
     return <p className="mt-2 text-sm text-slate-500">None</p>;
   }
@@ -29,15 +29,22 @@ function BookingTable({ bookings, deskNameById, onOpenBooking, onDeleteBooking }
             <th className="px-3 py-2">Date</th>
             <th className="px-3 py-2">Day</th>
             <th className="px-3 py-2">Desk</th>
+            {isAdmin ? <th className="px-3 py-2">User</th> : null}
+            {isAdmin ? <th className="px-3 py-2">Email</th> : null}
             <th className="px-3 py-2">Actions</th>
           </tr>
         </thead>
         <tbody>
           {bookings.map((booking) => (
-            <tr key={`${booking.date}-${booking.deskId}`} className="rounded-lg bg-slate-50 text-sm text-slate-700">
+            <tr
+              key={booking._id ?? `${booking.date}-${booking.deskId}-${booking.userId}`}
+              className="rounded-lg bg-slate-50 text-sm text-slate-700"
+            >
               <td className="rounded-l-lg px-3 py-3 font-medium text-slate-900">{booking.date}</td>
               <td className="px-3 py-3">{getWeekdayLabel(booking.date)}</td>
               <td className="px-3 py-3">{deskNameById[booking.deskId] ?? booking.deskId}</td>
+              {isAdmin ? <td className="px-3 py-3">{booking.username ?? '-'}</td> : null}
+              {isAdmin ? <td className="px-3 py-3">{booking.email ?? '-'}</td> : null}
               <td className="rounded-r-lg px-3 py-3">
                 <div className="flex flex-wrap gap-2">
                   <button
@@ -64,7 +71,7 @@ function BookingTable({ bookings, deskNameById, onOpenBooking, onDeleteBooking }
   );
 }
 
-function MyBookings({ bookings, deskNameById, isLoading, onOpenBooking, onDeleteBooking }) {
+function MyBookings({ bookings, deskNameById, isLoading, onOpenBooking, onDeleteBooking, isAdmin, onExportCsv }) {
   if (isLoading) {
     return (
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-lg">
@@ -76,8 +83,10 @@ function MyBookings({ bookings, deskNameById, isLoading, onOpenBooking, onDelete
   if (!bookings.length) {
     return (
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-lg">
-        <h3 className="text-lg font-semibold text-slate-900">My Bookings</h3>
-        <p className="mt-2 text-sm text-slate-600">You have no bookings yet.</p>
+        <h3 className="text-lg font-semibold text-slate-900">{isAdmin ? 'All Bookings' : 'My Bookings'}</h3>
+        <p className="mt-2 text-sm text-slate-600">
+          {isAdmin ? 'There are no bookings yet.' : 'You have no bookings yet.'}
+        </p>
       </section>
     );
   }
@@ -92,8 +101,25 @@ function MyBookings({ bookings, deskNameById, isLoading, onOpenBooking, onDelete
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-lg">
-      <h3 className="text-lg font-semibold text-slate-900">My Bookings</h3>
-      <p className="mt-1 text-sm text-slate-600">Open a booking in Desk View or remove it directly.</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-slate-900">{isAdmin ? 'All Bookings' : 'My Bookings'}</h3>
+          <p className="mt-1 text-sm text-slate-600">
+            {isAdmin
+              ? 'View and manage all desk bookings across users.'
+              : 'Open a booking in Desk View or remove it directly.'}
+          </p>
+        </div>
+        {isAdmin ? (
+          <button
+            type="button"
+            className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+            onClick={onExportCsv}
+          >
+            Export to CSV
+          </button>
+        ) : null}
+      </div>
 
       <div className="mt-4 grid gap-5">
         <div>
@@ -105,6 +131,7 @@ function MyBookings({ bookings, deskNameById, isLoading, onOpenBooking, onDelete
             deskNameById={deskNameById}
             onOpenBooking={onOpenBooking}
             onDeleteBooking={onDeleteBooking}
+            isAdmin={isAdmin}
           />
         </div>
 
@@ -117,6 +144,7 @@ function MyBookings({ bookings, deskNameById, isLoading, onOpenBooking, onDelete
             deskNameById={deskNameById}
             onOpenBooking={onOpenBooking}
             onDeleteBooking={onDeleteBooking}
+            isAdmin={isAdmin}
           />
         </div>
       </div>

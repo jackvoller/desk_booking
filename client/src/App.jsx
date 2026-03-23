@@ -15,7 +15,8 @@ const MAX_CALENDAR_MONTH = shiftMonth(CURRENT_MONTH, 1);
 const DEFAULT_AUTH_PROVIDERS = {
   devLogin: true,
   slack: false,
-  google: false
+  google: false,
+  admin: false
 };
 
 function findNearestWeekday(dateString, dayOffset) {
@@ -34,6 +35,7 @@ function findNearestWeekday(dateString, dayOffset) {
 }
 
 function App() {
+  const isAdminRoute = window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/');
   const [user, setUser] = useState(null);
   const [authProviders, setAuthProviders] = useState(DEFAULT_AUTH_PROVIDERS);
   const [authLoading, setAuthLoading] = useState(true);
@@ -55,6 +57,9 @@ function App() {
   const [devUsername, setDevUsername] = useState('');
   const [devEmail, setDevEmail] = useState('');
   const [isDevLoggingIn, setIsDevLoggingIn] = useState(false);
+  const [adminUsername, setAdminUsername] = useState('admin');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [isAdminLoggingIn, setIsAdminLoggingIn] = useState(false);
   const showAuthProviderDebug = import.meta.env.DEV;
 
   const clearNotices = () => {
@@ -85,6 +90,29 @@ function App() {
       setIsMyBookingsLoading(false);
     }
   }, []);
+
+  const loadAllBookings = useCallback(async () => {
+    setIsMyBookingsLoading(true);
+    try {
+      const response = await api.getAllBookings();
+      setMyBookings(response.bookings ?? []);
+    } finally {
+      setIsMyBookingsLoading(false);
+    }
+  }, []);
+
+  const refreshBookingsList = useCallback(async () => {
+    if (!user) {
+      return;
+    }
+
+    if (user.isAdmin) {
+      await loadAllBookings();
+      return;
+    }
+
+    await loadMyBookings();
+  }, [user, loadAllBookings, loadMyBookings]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -159,10 +187,10 @@ function App() {
       return;
     }
 
-    loadMyBookings().catch((apiError) => {
+    refreshBookingsList().catch((apiError) => {
       setError(apiError.message);
     });
-  }, [user, loadMyBookings]);
+  }, [user, refreshBookingsList]);
 
   const bookingCountToday = useMemo(() => bookings.length, [bookings]);
   const myBookingForSelectedDate = useMemo(() => {
@@ -224,7 +252,7 @@ function App() {
   const handleAvailableDeskClick = (desk) => {
     clearNotices();
 
-    if (myBookingForSelectedDate) {
+    if (!user?.isAdmin && myBookingForSelectedDate) {
       const deskLabel = deskNameById[myBookingForSelectedDate.deskId] ?? myBookingForSelectedDate.deskId;
       setError(`You already booked ${deskLabel} on ${selectedDate}. You can only book one desk per day.`);
       return;
@@ -249,7 +277,7 @@ function App() {
   const handleBookedDeskClick = ({ desk, booking }) => {
     clearNotices();
 
-    if (booking?.userId !== user?.id) {
+    if (!user?.isAdmin && booking?.userId !== user?.id) {
       setError('You can only remove your own bookings.');
       return;
     }
@@ -279,7 +307,7 @@ function App() {
       }
 
       setPendingAction(null);
-      await Promise.all([loadBookings(selectedDate), loadMonthCounts(calendarMonth), loadMyBookings()]);
+      await Promise.all([loadBookings(selectedDate), loadMonthCounts(calendarMonth), refreshBookingsList()]);
     } catch (apiError) {
       setError(apiError.message);
     } finally {
@@ -319,6 +347,7 @@ function App() {
     setMyBookings([]);
     setPendingAction(null);
     setActiveView('desk');
+    setAdminPassword('');
   };
 
   const handleDevLogin = async (event) => {
@@ -346,6 +375,32 @@ function App() {
     }
   };
 
+  const handleAdminLogin = async (event) => {
+    event.preventDefault();
+    clearNotices();
+
+    const username = adminUsername.trim();
+    const password = adminPassword;
+
+    if (!username || !password) {
+      setError('Enter both admin username and password.');
+      return;
+    }
+
+    setIsAdminLoggingIn(true);
+    try {
+      const response = await api.adminLogin(username, password);
+      setUser(response.user ?? null);
+      setAdminPassword('');
+      setActiveView('desk');
+      setSuccess('Signed in as admin.');
+    } catch (apiError) {
+      setError(apiError.message);
+    } finally {
+      setIsAdminLoggingIn(false);
+    }
+  };
+
   const handleOpenMyBooking = (booking) => {
     clearNotices();
     setSelectedDate(booking.date);
@@ -358,7 +413,10 @@ function App() {
     clearNotices();
 
     const deskLabel = deskNameById[booking.deskId] ?? booking.deskId;
-    const shouldDelete = window.confirm(`Remove your booking for ${deskLabel} on ${booking.date}?`);
+    const prompt = user?.isAdmin
+      ? `Remove booking for ${deskLabel} on ${booking.date}${booking.username ? ` (booked by ${booking.username})` : ''}?`
+      : `Remove your booking for ${deskLabel} on ${booking.date}?`;
+    const shouldDelete = window.confirm(prompt);
     if (!shouldDelete) {
       return;
     }
@@ -367,7 +425,7 @@ function App() {
       await api.deleteBooking(booking.deskId, booking.date);
       setSuccess(`${deskLabel} booking removed for ${booking.date}.`);
 
-      const refreshTasks = [loadMonthCounts(calendarMonth), loadMyBookings()];
+      const refreshTasks = [loadMonthCounts(calendarMonth), refreshBookingsList()];
       if (booking.date === selectedDate) {
         refreshTasks.push(loadBookings(selectedDate));
       }
@@ -378,11 +436,132 @@ function App() {
     }
   };
 
+  const handleExportBookingsCsv = () => {
+    clearNotices();
+
+    if (!user?.isAdmin) {
+      setError('Admin access required.');
+      return;
+    }
+
+    if (!myBookings.length) {
+      setError('No bookings to export.');
+      return;
+    }
+
+    const csvEscape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+    const getWeekday = (dateString) => {
+      const [year, month, day] = (dateString ?? '').split('-').map(Number);
+      if (!year || !month || !day) {
+        return '';
+      }
+      return new Date(year, month - 1, day).toLocaleDateString(undefined, { weekday: 'short' });
+    };
+
+    const rows = [...myBookings].sort(
+      (a, b) =>
+        a.date.localeCompare(b.date) ||
+        a.deskId.localeCompare(b.deskId) ||
+        (a.username ?? '').localeCompare(b.username ?? '')
+    );
+
+    const header = ['Date', 'Day', 'Desk ID', 'Desk Name', 'Username', 'Email', 'User ID', 'Created At', 'Updated At'];
+    const dataLines = rows.map((booking) =>
+      [
+        booking.date,
+        getWeekday(booking.date),
+        booking.deskId,
+        deskNameById[booking.deskId] ?? booking.deskId,
+        booking.username ?? '',
+        booking.email ?? '',
+        booking.userId ?? '',
+        booking.createdAt ?? '',
+        booking.updatedAt ?? ''
+      ]
+        .map(csvEscape)
+        .join(',')
+    );
+
+    const csv = [header.join(','), ...dataLines].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const objectUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = objectUrl;
+    link.download = `all-bookings-${todayDateString()}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(objectUrl);
+    setSuccess('All bookings exported to CSV.');
+  };
+
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="rounded-xl bg-white px-6 py-4 text-slate-700 shadow">Loading...</div>
       </div>
+    );
+  }
+
+  if (isAdminRoute && !user?.isAdmin) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-8">
+        <section className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-lg">
+          <h1 className="text-2xl font-bold text-slate-900">Admin Access</h1>
+          <p className="mt-2 text-sm text-slate-600">Sign in with the admin username and password.</p>
+
+          {error ? <p className="mt-4 rounded-lg bg-red-100 px-3 py-2 text-sm text-red-700">{error}</p> : null}
+          {success ? <p className="mt-4 rounded-lg bg-emerald-100 px-3 py-2 text-sm text-emerald-700">{success}</p> : null}
+
+          {user && !user.isAdmin ? (
+            <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              Currently signed in as {user.username}. Admin credentials are required for this page.
+            </div>
+          ) : null}
+
+          {!authProviders.admin ? (
+            <p className="mt-4 rounded-lg bg-amber-100 px-3 py-2 text-sm text-amber-700">
+              Admin login is not configured on the server yet.
+            </p>
+          ) : (
+            <form className="mt-4 space-y-3" onSubmit={handleAdminLogin}>
+              <input
+                type="text"
+                value={adminUsername}
+                onChange={(event) => setAdminUsername(event.target.value)}
+                placeholder="admin"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-[#1F67A5] focus:outline-none focus:ring-2 focus:ring-[#70BCD2]/40"
+                autoComplete="username"
+              />
+              <input
+                type="password"
+                value={adminPassword}
+                onChange={(event) => setAdminPassword(event.target.value)}
+                placeholder="Password"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-[#1F67A5] focus:outline-none focus:ring-2 focus:ring-[#70BCD2]/40"
+                autoComplete="current-password"
+              />
+              <button
+                type="submit"
+                className="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={isAdminLoggingIn}
+              >
+                {isAdminLoggingIn ? 'Signing in...' : 'Sign in as Admin'}
+              </button>
+            </form>
+          )}
+
+          {user && !user.isAdmin ? (
+            <button
+              type="button"
+              className="mt-3 w-full rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+              onClick={handleLogout}
+            >
+              Logout current user
+            </button>
+          ) : null}
+        </section>
+      </main>
     );
   }
 
@@ -508,7 +687,7 @@ function App() {
                 {showAuthProviderDebug ? (
                   <p className="mt-4 rounded-lg bg-[#E8F5FA] px-3 py-2 text-xs font-medium text-[#3C6283]">
                     Auth providers: dev={String(authProviders.devLogin)}, slack={String(authProviders.slack)}, google=
-                    {String(authProviders.google)}
+                    {String(authProviders.google)}, admin={String(authProviders.admin)}
                   </p>
                 ) : null}
               </div>
@@ -588,7 +767,7 @@ function App() {
               }`}
               onClick={() => setActiveView('myBookings')}
             >
-              My Bookings
+              {user?.isAdmin ? 'All Bookings' : 'My Bookings'}
             </button>
           </div>
 
@@ -681,6 +860,8 @@ function App() {
             isLoading={isMyBookingsLoading}
             onOpenBooking={handleOpenMyBooking}
             onDeleteBooking={handleDeleteMyBooking}
+            isAdmin={Boolean(user?.isAdmin)}
+            onExportCsv={handleExportBookingsCsv}
           />
         </section>
       )}

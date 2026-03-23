@@ -1,4 +1,4 @@
-import { randomBytes } from 'crypto';
+import { randomBytes, timingSafeEqual } from 'crypto';
 import { Router } from 'express';
 import passport from 'passport';
 import { isGoogleOAuthConfigured } from '../config/passport.js';
@@ -42,6 +42,41 @@ function isSlackAuthConfigured() {
   return Boolean(process.env.SLACK_CLIENT_ID && process.env.SLACK_CLIENT_SECRET);
 }
 
+function getAdminUsername() {
+  return 'admin';
+}
+
+function getAdminPassword() {
+  const value = process.env.ADMIN_PASSWORD;
+  if (!value || typeof value !== 'string') {
+    return '';
+  }
+
+  return value;
+}
+
+function isAdminLoginConfigured() {
+  return Boolean(getAdminPassword());
+}
+
+function safeCredentialsEqual(left, right) {
+  if (typeof left !== 'string' || typeof right !== 'string') {
+    return false;
+  }
+
+  const leftBuffer = Buffer.from(left);
+  const rightBuffer = Buffer.from(right);
+  const maxLength = Math.max(leftBuffer.length, rightBuffer.length, 1);
+
+  const leftPadded = Buffer.alloc(maxLength);
+  const rightPadded = Buffer.alloc(maxLength);
+
+  leftBuffer.copy(leftPadded);
+  rightBuffer.copy(rightPadded);
+
+  return timingSafeEqual(leftPadded, rightPadded) && leftBuffer.length === rightBuffer.length;
+}
+
 function parseAllowedIds(rawValue) {
   if (!rawValue || typeof rawValue !== 'string') {
     return [];
@@ -65,7 +100,8 @@ function getAuthProviders() {
   return {
     devLogin: isDevAuthEnabled(),
     slack: isSlackAuthConfigured(),
-    google: isGoogleOAuthConfigured()
+    google: isGoogleOAuthConfigured(),
+    admin: isAdminLoginConfigured()
   };
 }
 
@@ -254,7 +290,8 @@ router.get('/me', (req, res) => {
     user: {
       id: req.user.id,
       username: req.user.username,
-      email: req.user.email
+      email: req.user.email,
+      isAdmin: Boolean(req.user.isAdmin)
     },
     authProviders
   });
@@ -289,6 +326,42 @@ router.post('/dev-login', (req, res, next) => {
     id: `dev-${email}`,
     username,
     email
+  };
+
+  req.login(user, (loginError) => {
+    if (loginError) {
+      return next(loginError);
+    }
+
+    return res.status(200).json({ user });
+  });
+});
+
+router.post('/admin/login', (req, res, next) => {
+  if (!isAdminLoginConfigured()) {
+    return res.status(503).json({
+      message: 'Admin login is not configured.'
+    });
+  }
+
+  const rawUsername = typeof req.body?.username === 'string' ? req.body.username : '';
+  const rawPassword = typeof req.body?.password === 'string' ? req.body.password : '';
+
+  const username = rawUsername.trim();
+  const expectedUsername = getAdminUsername();
+  const expectedPassword = getAdminPassword();
+
+  if (!safeCredentialsEqual(username, expectedUsername) || !safeCredentialsEqual(rawPassword, expectedPassword)) {
+    return res.status(401).json({
+      message: 'Invalid admin credentials.'
+    });
+  }
+
+  const user = {
+    id: 'admin',
+    username: expectedUsername,
+    email: 'admin@local',
+    isAdmin: true
   };
 
   req.login(user, (loginError) => {

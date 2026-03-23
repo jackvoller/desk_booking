@@ -6,6 +6,10 @@ import { DESK_IDS, DESK_ID_SET } from '../config/desks.js';
 const router = Router();
 const MAX_ADVANCE_DAYS = 30;
 
+function isAdminUser(user) {
+  return Boolean(user?.isAdmin);
+}
+
 function parseDateOnly(dateString) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
     return null;
@@ -162,6 +166,27 @@ router.get('/mine', async (req, res, next) => {
   }
 });
 
+router.get('/all', async (req, res, next) => {
+  if (!isAdminUser(req.user)) {
+    return res.status(403).json({
+      message: 'Admin access required.'
+    });
+  }
+
+  try {
+    const bookings = await Booking.find({})
+      .where('deskId')
+      .in(DESK_IDS)
+      .select('deskId userId username email date createdAt updatedAt')
+      .sort({ date: 1, deskId: 1 })
+      .lean();
+
+    return res.json({ bookings });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 router.post('/', async (req, res, next) => {
   try {
     const { deskId, date } = req.body;
@@ -196,23 +221,25 @@ router.post('/', async (req, res, next) => {
       });
     }
 
-    const existingUserBooking = await Booking.findOne({
-      userId: req.user.id,
-      date
-    })
-      .select('deskId')
-      .lean();
+    if (!isAdminUser(req.user)) {
+      const existingUserBooking = await Booking.findOne({
+        userId: req.user.id,
+        date
+      })
+        .select('deskId')
+        .lean();
 
-    if (existingUserBooking) {
-      if (existingUserBooking.deskId === deskId) {
+      if (existingUserBooking) {
+        if (existingUserBooking.deskId === deskId) {
+          return res.status(409).json({
+            message: 'You already booked this desk for the selected date.'
+          });
+        }
+
         return res.status(409).json({
-          message: 'You already booked this desk for the selected date.'
+          message: `You already have a desk booking (${existingUserBooking.deskId}) for this date. You can only book one desk per day.`
         });
       }
-
-      return res.status(409).json({
-        message: `You already have a desk booking (${existingUserBooking.deskId}) for this date. You can only book one desk per day.`
-      });
     }
 
     const booking = await Booking.create({
@@ -274,16 +301,20 @@ router.delete('/', async (req, res, next) => {
       });
     }
 
-    if (existingBooking.userId !== req.user.id) {
+    if (!isAdminUser(req.user) && existingBooking.userId !== req.user.id) {
       return res.status(403).json({
         message: 'You can only remove your own bookings.'
       });
     }
 
-    const deletedBooking = await Booking.findOneAndDelete({
-      _id: existingBooking._id,
-      userId: req.user.id
-    }).lean();
+    const deleteFilter = isAdminUser(req.user)
+      ? { _id: existingBooking._id }
+      : {
+          _id: existingBooking._id,
+          userId: req.user.id
+        };
+
+    const deletedBooking = await Booking.findOneAndDelete(deleteFilter).lean();
 
     if (!deletedBooking) {
       return res.status(409).json({

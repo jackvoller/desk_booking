@@ -22,6 +22,12 @@ export const api = {
   getCurrentUser() {
     return request('/auth/me');
   },
+  adminLogin(username, password) {
+    return request('/auth/admin/login', {
+      method: 'POST',
+      body: JSON.stringify({ username, password })
+    });
+  },
   loginWithSlack() {
     window.location.href = '/auth/slack';
   },
@@ -39,6 +45,9 @@ export const api = {
   },
   getMyBookings() {
     return request('/api/bookings/mine');
+  },
+  getAllBookings() {
+    return request('/api/bookings/all');
   },
   createBooking(deskId, date) {
     return request('/api/bookings', {
