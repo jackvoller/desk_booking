@@ -1,0 +1,32 @@
+name: Keep App Warm
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Validate keepalive URL
+        env:
+          KEEPALIVE_HEALTH_URL: ${{ vars.KEEPALIVE_HEALTH_URL }}
+        run: |
+          if [ -z "$KEEPALIVE_HEALTH_URL" ]; then
+            echo "Missing repository variable: KEEPALIVE_HEALTH_URL"
+            echo "Set it to your app health URL, e.g. https://your-app.koyeb.app/health"
+            exit 1
+          fi
+          echo "KEEPALIVE_HEALTH_URL=$KEEPALIVE_HEALTH_URL" >> "$GITHUB_ENV"
+
+      - name: Ping health endpoint
+        run: |
+          curl --fail --silent --show-error \
+            --max-time 20 \
+            --retry 2 \
+            --retry-delay 5 \
+            "$KEEPALIVE_HEALTH_URL"
