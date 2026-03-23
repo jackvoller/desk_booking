@@ -7,7 +7,6 @@ import {
 } from '../utils/date';
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const MOBILE_WEEKDAYS = WEEKDAYS.slice(0, 5);
 
 function parseDateString(dateString) {
   const [year, month, day] = dateString.split('-').map(Number);
@@ -206,24 +205,18 @@ function MonthlyCalendar({
   }, [month, selectedDate, mobileWeeks]);
 
   const mobileWeek = mobileWeeks[mobileWeekIndex] ?? null;
+  const mobileWeekDays = mobileWeek ? mobileWeek.days.filter(Boolean) : [];
   const canGoPreviousWeek = mobileWeekIndex > 0;
   const canGoNextWeek = mobileWeekIndex < mobileWeeks.length - 1;
 
-  const renderDayCell = (cell, isMobile) => {
-    if (!cell) {
-      return (
-        <div className={`rounded-lg bg-slate-50 ${isMobile ? 'h-24' : 'h-20 sm:h-24 sm:rounded-xl'}`} />
-      );
-    }
-
+  const renderDesktopDayCell = (cell) => {
     const hasBookings = cell.bookedCount > 0;
     const peopleSymbolCount = getPeopleSymbolCount(cell.bookedCount, totalDesks);
     const isWeekend = cell.isWeekend;
     const isDisabledDate = isWeekend || cell.isOutOfRange;
     const isSelectedDate = selectedDate === cell.date && !isDisabledDate;
-    const baseClass = isMobile
-      ? 'relative h-24 overflow-hidden rounded-lg border p-2 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300'
-      : 'relative h-20 overflow-hidden rounded-lg border p-1.5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 sm:h-24 sm:rounded-xl sm:p-2';
+    const baseClass =
+      'relative h-20 overflow-hidden rounded-lg border p-1.5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 sm:h-24 sm:rounded-xl sm:p-2';
     const weekendClass = 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400';
     const bookedDayClass = 'border-emerald-300 bg-emerald-50/70 hover:border-emerald-400 hover:bg-emerald-100/70';
     const openDayClass = 'border-slate-200 bg-slate-50 hover:border-[#13c5e2] hover:bg-[#e8f8fc]';
@@ -246,37 +239,95 @@ function MonthlyCalendar({
             {cell.dayNumber}
           </div>
           {hasBookings && !isDisabledDate ? (
-            <div className={`items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-emerald-700 ${isMobile ? 'inline-flex' : 'hidden sm:inline-flex'}`}>
+            <div className="hidden items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-emerald-700 sm:inline-flex">
               {Array.from({ length: peopleSymbolCount }, (_item, index) => (
                 <PeopleSymbol key={index} index={index} />
               ))}
             </div>
           ) : null}
-          {hasBookings && !isDisabledDate && !isMobile ? (
+          {hasBookings && !isDisabledDate ? (
             <span className="mt-1 h-2.5 w-2.5 rounded-full bg-emerald-500 sm:hidden" aria-hidden="true" />
           ) : null}
         </div>
         {isDisabledDate ? (
-          <div className={`inline-flex rounded-full bg-slate-200 px-2 py-1 font-semibold text-slate-500 ${isMobile ? 'mt-2 text-[11px]' : 'mt-1 text-[10px] sm:mt-2 sm:text-[11px]'}`}>
-            <span className={isMobile ? '' : 'sm:hidden'}>{isMobile ? 'Unavailable' : 'N/A'}</span>
-            {!isMobile ? <span className="hidden sm:inline">Unavailable</span> : null}
+          <div className="mt-1 inline-flex rounded-full bg-slate-200 px-2 py-1 text-[10px] font-semibold text-slate-500 sm:mt-2 sm:text-[11px]">
+            <span className="sm:hidden">N/A</span>
+            <span className="hidden sm:inline">Unavailable</span>
           </div>
         ) : (
           <div
-            className={`inline-flex rounded-full px-2 py-1 font-medium ${getAvailabilityBadgeClass(cell.bookedCount, totalDesks)} ${isMobile ? 'mt-2 text-[11px]' : 'mt-1 text-[10px] sm:mt-2 sm:text-[11px]'}`}
+            className={`mt-1 inline-flex rounded-full px-2 py-1 text-[10px] font-medium sm:mt-2 sm:text-[11px] ${getAvailabilityBadgeClass(cell.bookedCount, totalDesks)}`}
           >
             <span>
               {cell.bookedCount}/{totalDesks}
             </span>
-            <span className={isMobile ? '' : 'hidden sm:inline'}>&nbsp;Desks</span>
+            <span className="hidden sm:inline">&nbsp;Desks</span>
           </div>
         )}
-        <div className={`${isMobile ? 'mt-1.5 min-h-[16px]' : 'mt-1.5 hidden min-h-[16px] sm:block'}`}>
+        <div className="mt-1.5 hidden min-h-[16px] sm:block">
           {isWeekend ? (
             <span className="text-[11px] font-medium text-slate-500">Weekend</span>
           ) : peopleSymbolCount > 0 ? null : (
             <span className="text-[11px] font-medium text-slate-500">No bookings</span>
           )}
+        </div>
+      </button>
+    );
+  };
+
+  const renderMobileDayRow = (cell) => {
+    const hasBookings = cell.bookedCount > 0;
+    const peopleSymbolCount = getPeopleSymbolCount(cell.bookedCount, totalDesks);
+    const isDisabledDate = cell.isOutOfRange;
+    const isSelectedDate = selectedDate === cell.date && !isDisabledDate;
+    const weekdayLabel = WEEKDAYS[cell.weekdayIndex] ?? '';
+    const dayLabel = parseDateString(cell.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    const rowClass =
+      'w-full rounded-xl border p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300';
+    const disabledClass = 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400';
+    const bookedClass = 'border-emerald-300 bg-emerald-50/70 hover:border-emerald-400 hover:bg-emerald-100/70';
+    const openClass = 'border-slate-200 bg-slate-50 hover:border-[#13c5e2] hover:bg-[#e8f8fc]';
+    const selectedClass = isSelectedDate ? 'ring-2 ring-[#13c5e2] ring-offset-0' : '';
+
+    return (
+      <button
+        key={cell.key}
+        type="button"
+        className={`${rowClass} ${isDisabledDate ? disabledClass : hasBookings ? bookedClass : openClass} ${selectedClass}`}
+        onClick={() => {
+          if (!isDisabledDate) {
+            onDateSelect(cell.date);
+          }
+        }}
+        disabled={isDisabledDate}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{weekdayLabel}</p>
+            <p className={`text-sm font-semibold ${isDisabledDate ? 'text-slate-500' : 'text-slate-900'}`}>{dayLabel}</p>
+          </div>
+          {hasBookings && !isDisabledDate ? (
+            <div className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-emerald-700">
+              {Array.from({ length: peopleSymbolCount }, (_item, index) => (
+                <PeopleSymbol key={index} index={index} />
+              ))}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="mt-2 flex items-center justify-between gap-3">
+          {isDisabledDate ? (
+            <span className="inline-flex rounded-full bg-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-500">
+              Unavailable
+            </span>
+          ) : (
+            <span
+              className={`inline-flex rounded-full px-2 py-1 text-[11px] font-medium ${getAvailabilityBadgeClass(cell.bookedCount, totalDesks)}`}
+            >
+              {cell.bookedCount}/{totalDesks} Desks
+            </span>
+          )}
+          <span className="text-xs font-medium text-slate-500">{hasBookings ? `${cell.bookedCount} booked` : 'No bookings'}</span>
         </div>
       </button>
     );
@@ -328,20 +379,8 @@ function MonthlyCalendar({
         </button>
       </div>
 
-      <div className="mb-1 grid grid-cols-5 gap-1.5 pb-1 sm:hidden">
-        {MOBILE_WEEKDAYS.map((label) => (
-          <div key={`mobile-${label}`} className="text-center text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-            {label}
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-5 gap-1.5 sm:hidden">
-        {mobileWeek
-          ? mobileWeek.days.map((cell, index) => (
-              <div key={`${mobileWeek.key}-${MOBILE_WEEKDAYS[index]}`}>{renderDayCell(cell, true)}</div>
-            ))
-          : null}
+      <div className="space-y-2 sm:hidden">
+        {mobileWeekDays.length ? mobileWeekDays.map((cell) => renderMobileDayRow(cell)) : null}
       </div>
 
       <div className="hidden grid-cols-7 gap-1.5 sm:grid sm:gap-2">
@@ -357,7 +396,7 @@ function MonthlyCalendar({
             return <div key={cell.key} className="h-20 rounded-lg bg-slate-50 sm:h-24 sm:rounded-xl" />;
           }
 
-          return renderDayCell(cell, false);
+          return renderDesktopDayCell(cell);
         })}
       </div>
     </div>
