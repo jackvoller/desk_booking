@@ -2,7 +2,7 @@ name: Keep App Warm
 
 on:
   schedule:
-    - cron: "0 * * * *"
+    - cron: "*/20 * * * *"
   workflow_dispatch:
 
 permissions: {}
@@ -10,7 +10,7 @@ permissions: {}
 jobs:
   ping:
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 5
     steps:
       - name: Validate keepalive URL
         env:
@@ -25,8 +25,35 @@ jobs:
 
       - name: Ping health endpoint
         run: |
-          curl --fail --silent --show-error \
-            --max-time 20 \
-            --retry 2 \
-            --retry-delay 5 \
-            "$KEEPALIVE_HEALTH_URL"
+          max_attempts=6
+          sleep_seconds=10
+          attempt=1
+
+          while [ "$attempt" -le "$max_attempts" ]; do
+            http_code="$(curl --silent --show-error --location \
+              --connect-timeout 10 \
+              --max-time 25 \
+              --output /tmp/keepalive-response.txt \
+              --write-out "%{http_code}" \
+              "$KEEPALIVE_HEALTH_URL" || true)"
+
+            http_code="${http_code:-000}"
+
+            if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 400 ]; then
+              echo "Keepalive succeeded (HTTP $http_code) on attempt $attempt/$max_attempts."
+              exit 0
+            fi
+
+            echo "Attempt $attempt/$max_attempts returned HTTP $http_code."
+            if [ "$attempt" -lt "$max_attempts" ]; then
+              echo "Retrying in ${sleep_seconds}s..."
+              sleep "$sleep_seconds"
+            fi
+
+            attempt=$((attempt + 1))
+          done
+
+          echo "Keepalive failed after $max_attempts attempts."
+          echo "Last response body (truncated):"
+          tail -c 600 /tmp/keepalive-response.txt || true
+          exit 1
