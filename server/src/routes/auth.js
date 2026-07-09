@@ -10,8 +10,30 @@ const SLACK_TOKEN_URL = 'https://slack.com/api/openid.connect.token';
 const SLACK_USERINFO_URL = 'https://slack.com/api/openid.connect.userInfo';
 const SLACK_STATE_TTL_MS = 10 * 60 * 1000;
 
-function getClientBaseUrl() {
-  return process.env.CLIENT_BASE_URL || 'http://localhost:5173';
+function getRequestBaseUrl(req) {
+  if (!req?.get) {
+    return null;
+  }
+
+  const host = req.get('host');
+  if (!host) {
+    return null;
+  }
+
+  return `${req.protocol}://${host}`;
+}
+
+function getClientBaseUrl(req) {
+  const configuredBaseUrl = process.env.CLIENT_BASE_URL;
+  if (configuredBaseUrl) {
+    try {
+      return new URL(configuredBaseUrl).origin;
+    } catch (_error) {
+      console.warn('Ignoring invalid CLIENT_BASE_URL. Falling back to request origin.');
+    }
+  }
+
+  return getRequestBaseUrl(req) || 'http://localhost:5173';
 }
 
 function getServerBaseUrl() {
@@ -105,8 +127,8 @@ function getAuthProviders() {
   };
 }
 
-function redirectAuthError(res, code) {
-  const url = new URL(getClientBaseUrl());
+function redirectAuthError(req, res, code) {
+  const url = new URL(getClientBaseUrl(req));
   url.searchParams.set('authError', code);
   return res.redirect(url.toString());
 }
@@ -126,7 +148,7 @@ function buildUsername(value, email) {
 
 router.get('/google', (req, res, next) => {
   if (!isGoogleOAuthConfigured()) {
-    return redirectAuthError(res, 'googleDisabled');
+    return redirectAuthError(req, res, 'googleDisabled');
   }
 
   return passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
@@ -134,21 +156,21 @@ router.get('/google', (req, res, next) => {
 
 router.get('/google/callback', (req, res, next) => {
   if (!isGoogleOAuthConfigured()) {
-    return redirectAuthError(res, 'googleDisabled');
+    return redirectAuthError(req, res, 'googleDisabled');
   }
 
-  return passport.authenticate('google', { failureRedirect: `${getClientBaseUrl()}/?authError=google` })(
+  return passport.authenticate('google', { failureRedirect: `${getClientBaseUrl(req)}/?authError=google` })(
     req,
     res,
     next
   );
 }, (_req, res) => {
-  res.redirect(getClientBaseUrl());
+  res.redirect(getClientBaseUrl(_req));
 });
 
 router.get('/slack', (req, res) => {
   if (!isSlackAuthConfigured()) {
-    return redirectAuthError(res, 'slackDisabled');
+    return redirectAuthError(req, res, 'slackDisabled');
   }
 
   const state = randomBytes(24).toString('hex');
@@ -167,7 +189,7 @@ router.get('/slack', (req, res) => {
 
   return req.session.save((sessionError) => {
     if (sessionError) {
-      return redirectAuthError(res, 'slackState');
+      return redirectAuthError(req, res, 'slackState');
     }
 
     return res.redirect(`${SLACK_AUTHORIZE_URL}?${params.toString()}`);
@@ -176,12 +198,12 @@ router.get('/slack', (req, res) => {
 
 router.get('/slack/callback', async (req, res, next) => {
   if (!isSlackAuthConfigured()) {
-    return redirectAuthError(res, 'slackDisabled');
+    return redirectAuthError(req, res, 'slackDisabled');
   }
 
   const { code, state, error: slackError } = req.query;
   if (slackError) {
-    return redirectAuthError(res, 'slackDenied');
+    return redirectAuthError(req, res, 'slackDenied');
   }
 
   const stateRecord = req.session.slackAuthState;
@@ -194,11 +216,11 @@ router.get('/slack/callback', async (req, res, next) => {
     typeof stateRecord.expiresAt !== 'number' ||
     stateRecord.expiresAt < Date.now()
   ) {
-    return redirectAuthError(res, 'slackState');
+    return redirectAuthError(req, res, 'slackState');
   }
 
   if (!code || typeof code !== 'string') {
-    return redirectAuthError(res, 'slackDenied');
+    return redirectAuthError(req, res, 'slackDenied');
   }
 
   try {
@@ -220,7 +242,7 @@ router.get('/slack/callback', async (req, res, next) => {
 
     const tokenPayload = await tokenResponse.json().catch(() => ({}));
     if (!tokenResponse.ok || !tokenPayload?.ok) {
-      return redirectAuthError(res, 'slackToken');
+      return redirectAuthError(req, res, 'slackToken');
     }
 
     const userInfoResponse = await fetch(SLACK_USERINFO_URL, {
@@ -231,7 +253,7 @@ router.get('/slack/callback', async (req, res, next) => {
     const userInfoPayload = await userInfoResponse.json().catch(() => ({}));
 
     if (!userInfoResponse.ok || userInfoPayload?.ok === false) {
-      return redirectAuthError(res, 'slackProfile');
+      return redirectAuthError(req, res, 'slackProfile');
     }
 
     const teamId = userInfoPayload['https://slack.com/team_id'] ?? '';
@@ -244,18 +266,18 @@ router.get('/slack/callback', async (req, res, next) => {
     );
 
     if (!userId || !email || !EMAIL_REGEX.test(email)) {
-      return redirectAuthError(res, 'slackProfile');
+      return redirectAuthError(req, res, 'slackProfile');
     }
 
     const allowedTeamIds = getAllowedSlackTeamIds();
     const allowedOrgIds = getAllowedSlackOrgIds();
 
     if (allowedTeamIds.length > 0 && !allowedTeamIds.includes(teamId)) {
-      return redirectAuthError(res, 'slackWorkspace');
+      return redirectAuthError(req, res, 'slackWorkspace');
     }
 
     if (allowedOrgIds.length > 0 && !allowedOrgIds.includes(orgId)) {
-      return redirectAuthError(res, 'slackWorkspace');
+      return redirectAuthError(req, res, 'slackWorkspace');
     }
 
     const user = {
@@ -269,7 +291,7 @@ router.get('/slack/callback', async (req, res, next) => {
         return next(loginError);
       }
 
-      return res.redirect(getClientBaseUrl());
+      return res.redirect(getClientBaseUrl(req));
     });
   } catch (error) {
     return next(error);
