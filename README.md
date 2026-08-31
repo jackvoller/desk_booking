@@ -104,3 +104,12 @@ Use the full deployment and service breakdown here:
 
 - Floor layout schema: `client/src/config/floorPlanSchema.js`
 - Production server serves `client/dist` from Express so app + API are same-origin.
+
+## Design system — deliberately not Voller
+
+This app is **client-facing and intentionally off-brand for Voller.** It runs a
+Salesforce-adjacent palette (`sfSeaside #007ab7`, `sfIce #13c5e2`, `sfPepper #0d0e20`,
+Proxima Nova / Futura PT), defined in `client/tailwind.config.js` and `client/src/index.css`.
+
+Do **not** apply the Voller design system here. If you have been told that Voller repos follow
+`VOLLER.md`, this repo is the documented exception — leave its palette and type alone.
