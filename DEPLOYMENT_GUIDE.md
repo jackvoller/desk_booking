@@ -148,7 +148,18 @@ Then open app URL and run login test:
 
 ## Koyeb Quick Setup
 
-If deploying on Koyeb with this monorepo layout (`client/` + `server/`), use:
+The Koyeb service uses the **Dockerfile** builder (Settings -> Builder -> Dockerfile, no overrides).
+The multi-stage `Dockerfile` installs server dependencies and builds the React client on
+Koyeb's builder, so the running instance only has to start `node server/src/index.js`.
+
+Do not switch back to the Buildpack builder. The buildpack build phase did not persist its
+output, so every cold start re-ran `npm install` and `vite build` on a 0.1 vCPU free instance.
+That took minutes, failed the TCP health check, and Koyeb marked the service inactive (public
+URL returned `404: No active service`).
+
+Recommended Koyeb health check: TCP on port 8000 with a grace period of at least 90s.
+
+The `build:koyeb` and `start:koyeb` npm scripts remain only as a fallback for buildpack-style hosts:
 
 - Build command:
 
