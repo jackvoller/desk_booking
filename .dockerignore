@@ -1,0 +1,13 @@
+.git
+.github
+.claude
+.venv
+node_modules
+**/node_modules
+**/dist
+server/public
+.env
+**/.env
+*.jpg
+*.png
+*.md
