@@ -2,8 +2,9 @@ name: Keep App Warm
 
 on:
   schedule:
-    - cron: "30 4-22 * * *"
-    - cron: "0 5-23 * * *"
+    # Every 15 minutes, 05:00-00:45 BST. GitHub drops scheduled runs under load and the
+    # Koyeb free instance sleeps after 65 idle minutes, so ping more often than that.
+    - cron: "*/15 4-23 * * *"
   workflow_dispatch:
 
 permissions: {}
@@ -26,14 +27,14 @@ jobs:
 
       - name: Ping health endpoint
         run: |
-          max_attempts=6
-          sleep_seconds=10
+          max_attempts=4
+          sleep_seconds=15
           attempt=1
 
           while [ "$attempt" -le "$max_attempts" ]; do
             http_code="$(curl --silent --show-error --location \
               --connect-timeout 10 \
-              --max-time 25 \
+              --max-time 90 \
               --output /tmp/keepalive-response.txt \
               --write-out "%{http_code}" \
               "$KEEPALIVE_HEALTH_URL" || true)"
