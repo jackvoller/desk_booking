@@ -10,6 +10,6 @@
     "dev:server": "npm run dev --prefix server",
     "dev:client": "npm run dev --prefix client",
     "build:koyeb": "npm install --prefix server --omit=dev && npm install --prefix client --include=dev && npm run build --prefix client && mkdir -p server/public && cp -R client/dist/. server/public/",
-    "start:koyeb": "( [ -d server/node_modules/express ] || npm install --prefix server --omit=dev ) && ( [ -f server/public/index.html ] || (npm install --prefix client --include=dev && npm run build --prefix client && mkdir -p server/public && cp -R client/dist/. server/public/) ) && npm start --prefix server"
+    "start:koyeb": "( [ -d server/node_modules/express ] || (echo 'WARNING: server dependencies missing at startup - build phase output did not persist' && npm install --prefix server --omit=dev) ) && ( [ -f server/public/index.html ] || (echo 'WARNING: frontend build missing at startup - rebuilding during boot' && npm install --prefix client --include=dev && npm run build --prefix client && mkdir -p server/public && cp -R client/dist/. server/public/) ) && exec node server/src/index.js"
   }
 }
