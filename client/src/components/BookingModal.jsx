@@ -1,4 +1,15 @@
-function BookingModal({ desk, date, mode, bookedBy, onCancel, onConfirm, isSubmitting }) {
+function BookingModal({
+  desk,
+  date,
+  mode,
+  bookedBy,
+  onCancel,
+  onConfirm,
+  isSubmitting,
+  isAdmin = false,
+  bookingFor = '',
+  onBookingForChange
+}) {
   if (!desk || !mode) {
     return null;
   }
@@ -30,6 +41,27 @@ function BookingModal({ desk, date, mode, bookedBy, onCancel, onConfirm, isSubmi
         {isUnbook && bookedBy ? (
           <p className="mt-2 text-xs text-slate-500">Currently booked by: {bookedBy}</p>
         ) : null}
+        {!isUnbook && isAdmin ? (
+          <div className="mt-4">
+            <label htmlFor="booking-for" className="block text-sm font-medium text-slate-700">
+              Booking for (optional)
+            </label>
+            <input
+              id="booking-for"
+              type="text"
+              value={bookingFor}
+              onChange={(event) => onBookingForChange?.(event.target.value)}
+              placeholder="e.g. Giovana (Marketing)"
+              maxLength={60}
+              autoFocus
+              disabled={isSubmitting}
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#007AB7] focus:outline-none focus:ring-1 focus:ring-[#007AB7]"
+            />
+            <p className="mt-1 text-xs text-slate-500">
+              Leave blank to book under your own name. The name entered will show on the floor plan.
+            </p>
+          </div>
+        ) : null}
         <div className="mt-6 flex justify-end gap-3">
           <button
             type="button"
@@ -45,7 +77,11 @@ function BookingModal({ desk, date, mode, bookedBy, onCancel, onConfirm, isSubmi
             onClick={onConfirm}
             disabled={isSubmitting}
           >
-            {isSubmitting ? 'Saving...' : buttonLabel}
+            {isSubmitting
+              ? 'Saving...'
+              : !isUnbook && isAdmin && bookingFor.trim()
+                ? `Book for ${bookingFor.trim()}`
+                : buttonLabel}
           </button>
         </div>
       </div>

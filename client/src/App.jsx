@@ -50,6 +50,7 @@ function App() {
   const [isMyBookingsLoading, setIsMyBookingsLoading] = useState(false);
 
   const [pendingAction, setPendingAction] = useState(null);
+  const [bookingFor, setBookingFor] = useState('');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -268,6 +269,7 @@ function App() {
       return;
     }
 
+    setBookingFor('');
     setPendingAction({
       type: 'book',
       desk
@@ -302,11 +304,17 @@ function App() {
         await api.deleteBooking(pendingAction.desk.id, selectedDate);
         setSuccess(`${pendingAction.desk.name} booking removed for ${selectedDate}.`);
       } else {
-        await api.createBooking(pendingAction.desk.id, selectedDate);
-        setSuccess(`${pendingAction.desk.name} is booked for ${selectedDate}.`);
+        const guestName = user?.isAdmin ? bookingFor.trim() : '';
+        await api.createBooking(pendingAction.desk.id, selectedDate, guestName);
+        setSuccess(
+          guestName
+            ? `${pendingAction.desk.name} is booked for ${guestName} on ${selectedDate}.`
+            : `${pendingAction.desk.name} is booked for ${selectedDate}.`
+        );
       }
 
       setPendingAction(null);
+      setBookingFor('');
       await Promise.all([loadBookings(selectedDate), loadMonthCounts(calendarMonth), refreshBookingsList()]);
     } catch (apiError) {
       setError(apiError.message);
@@ -875,9 +883,15 @@ function App() {
         date={selectedDate}
         mode={pendingAction?.type ?? null}
         bookedBy={pendingAction?.booking?.username ?? ''}
-        onCancel={() => setPendingAction(null)}
+        onCancel={() => {
+          setPendingAction(null);
+          setBookingFor('');
+        }}
         onConfirm={handleConfirmDeskAction}
         isSubmitting={isSubmitting}
+        isAdmin={Boolean(user?.isAdmin)}
+        bookingFor={bookingFor}
+        onBookingForChange={setBookingFor}
       />
       </div>
     </main>

@@ -22,6 +22,7 @@ Desk booking app for internal teams with:
 - Booking limit: today + 30 days
 - Weekends disabled for booking
 - Users can only remove their own bookings
+- Admin login at `/admin` (needs `ADMIN_PASSWORD`): can book several desks per day, book a desk under another person's name (new starters, visitors), remove any booking, and export all bookings as CSV
 - Authenticated-only booking endpoints
 
 ## Quick Local Setup
@@ -69,6 +70,7 @@ Required in production:
 
 Common flags:
 
+- `ADMIN_PASSWORD` (optional; enables the `/admin` login with username `admin`)
 - `ENABLE_DEV_AUTH=true|false`
 - `NODE_ENV=production`
 

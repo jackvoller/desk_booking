@@ -49,10 +49,15 @@ export const api = {
   getAllBookings() {
     return request('/api/bookings/all');
   },
-  createBooking(deskId, date) {
+  createBooking(deskId, date, bookingFor = '') {
+    const body = { deskId, date };
+    if (bookingFor) {
+      body.bookingFor = bookingFor;
+    }
+
     return request('/api/bookings', {
       method: 'POST',
-      body: JSON.stringify({ deskId, date })
+      body: JSON.stringify(body)
     });
   },
   deleteBooking(deskId, date) {

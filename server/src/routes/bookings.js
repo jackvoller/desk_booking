@@ -5,6 +5,7 @@ import { DESK_IDS, DESK_ID_SET } from '../config/desks.js';
 
 const router = Router();
 const MAX_ADVANCE_DAYS = 30;
+const MAX_GUEST_NAME_LENGTH = 60;
 
 function isAdminUser(user) {
   return Boolean(user?.isAdmin);
@@ -189,7 +190,7 @@ router.get('/all', async (req, res, next) => {
 
 router.post('/', async (req, res, next) => {
   try {
-    const { deskId, date } = req.body;
+    const { deskId, date, bookingFor } = req.body;
 
     if (!deskId || typeof deskId !== 'string') {
       return res.status(400).json({ message: '"deskId" is required.' });
@@ -201,6 +202,26 @@ router.post('/', async (req, res, next) => {
 
     if (!date || typeof date !== 'string' || !parseDateOnly(date)) {
       return res.status(400).json({ message: '"date" is required in YYYY-MM-DD format.' });
+    }
+
+    let guestName = '';
+    if (bookingFor !== undefined && bookingFor !== null && bookingFor !== '') {
+      if (!isAdminUser(req.user)) {
+        return res.status(403).json({
+          message: 'Only admins can book a desk for someone else.'
+        });
+      }
+
+      if (typeof bookingFor !== 'string' || !bookingFor.trim()) {
+        return res.status(400).json({ message: '"bookingFor" must be a non-empty name.' });
+      }
+
+      guestName = bookingFor.trim().replace(/\s+/g, ' ');
+      if (guestName.length > MAX_GUEST_NAME_LENGTH) {
+        return res.status(400).json({
+          message: `"bookingFor" must be ${MAX_GUEST_NAME_LENGTH} characters or fewer.`
+        });
+      }
     }
 
     if (isPastDate(date)) {
@@ -246,7 +267,7 @@ router.post('/', async (req, res, next) => {
       deskId,
       date,
       userId: req.user.id,
-      username: req.user.username,
+      username: guestName || req.user.username,
       email: req.user.email
     });
 
