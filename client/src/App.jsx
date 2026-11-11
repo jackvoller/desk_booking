@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AppHeader, MobileTabBar } from './components/AppNav';
+import { AppHeader } from './components/AppNav';
 import BrandBackground from './components/BrandBackground';
 import { BottomSheet, CARD, DeskDetails, InOfficeList, WeekStrip, YourDeskCard } from './components/DeskPanel';
 import FloorPlan, { DESK_LOOK, LegendItem, getDeskStatus } from './components/FloorPlan';
@@ -755,7 +755,7 @@ function App() {
       <BrandBackground />
       <AppHeader user={user} activeView={activeView} onChangeView={changeView} onLogout={handleLogout} />
 
-      <main className="mx-auto flex max-w-[1360px] flex-col gap-3 px-4 pb-28 pt-3 md:gap-5 md:px-8 md:pb-10 md:pt-7">
+      <main className="mx-auto flex max-w-[1360px] flex-col gap-3 px-4 pb-8 pt-3 md:gap-5 md:px-8 md:pb-10 md:pt-7">
         {activeView === 'desk' ? (
           <>
             <section aria-label="Choose a day" className="flex flex-wrap items-end justify-between gap-2.5 md:gap-5">
@@ -871,12 +871,10 @@ function App() {
         )}
       </main>
 
-      <MobileTabBar isAdmin={Boolean(user.isAdmin)} activeView={activeView} onChangeView={changeView} />
-
       {error || success ? (
         <div
           role={error ? 'alert' : 'status'}
-          className={`fixed inset-x-4 bottom-[100px] z-50 mx-auto flex max-w-md items-center gap-2.5 rounded-[14px] px-4 py-3.5 text-[15px] font-semibold shadow-[0_8px_24px_rgba(13,14,32,0.25)] md:bottom-6 md:left-auto md:right-6 md:mx-0 ${
+          className={`fixed inset-x-4 bottom-[calc(16px+env(safe-area-inset-bottom))] z-50 mx-auto flex max-w-md items-center gap-2.5 rounded-[14px] px-4 py-3.5 text-[15px] font-semibold shadow-[0_8px_24px_rgba(13,14,32,0.25)] md:bottom-6 md:left-auto md:right-6 md:mx-0 ${
             error ? 'bg-[#FEF3F2] text-[#B42318] ring-1 ring-[#E8B4AE]' : 'bg-white text-sfNavy'
           }`}
         >

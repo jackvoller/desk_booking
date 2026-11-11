@@ -296,13 +296,13 @@ function LandscapeLabels() {
   const centred = 'translate(-50%, -50%)';
   return (
     <>
-      <span className={`${LABEL_CLASS} text-xs`} style={{ left: '18.6%', top: '14%', transform: centred }}>
+      <span className={`${LABEL_CLASS} text-xs`} style={{ left: '19.66%', top: '14%', transform: centred }}>
         Left pod
       </span>
-      <span className={`${LABEL_CLASS} text-xs`} style={{ left: '52.97%', top: '61.8%', transform: centred }}>
+      <span className={`${LABEL_CLASS} text-xs`} style={{ left: '52.97%', top: '63.4%', transform: centred }}>
         Centre pod
       </span>
-      <span className={`${LABEL_CLASS} text-xs`} style={{ left: '85.17%', top: '16.6%', transform: centred }}>
+      <span className={`${LABEL_CLASS} text-xs`} style={{ left: '84.15%', top: '16.6%', transform: centred }}>
         Right pod
       </span>
       <span className={`${LABEL_CLASS} text-xs !text-[#036483]`} style={{ left: '79.4%', top: '67.8%', transform: centred }}>
@@ -322,9 +322,9 @@ function LandscapeLabels() {
 // On phones the pods are marked by thin bars in the margin left of the room,
 // spanning each pod's rows, instead of labels squeezed between the desks.
 const PORTRAIT_POD_MARKERS = [
-  { label: 'Right pod', top: 4, bottom: 26 },
+  { label: 'Right pod', top: 5, bottom: 27 },
   { label: 'Centre pod', top: 36.5, bottom: 57.5 },
-  { label: 'Left pod', top: 64, bottom: 98 }
+  { label: 'Left pod', top: 63, bottom: 97 }
 ];
 
 function PodMarker({ label, top, bottom }) {
