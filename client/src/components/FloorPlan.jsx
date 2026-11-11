@@ -1,143 +1,441 @@
 import { useMemo } from 'react';
-import { CHAIRS, DESKS, FLOOR_HEIGHT, FLOOR_WIDTH } from '../config/floorPlanSchema';
+import { DESKS, ENTRANCE, FLOOR_CROP, LOUNGE, ROOM_OUTLINE, ROOM_WALLS } from '../config/floorPlanSchema';
+import { getFirstName, getInitials, isOwnBooking } from '../utils/bookings';
 
-const AVAILABLE_DESK_COLORS = {
-  fill: '#10B981',
-  stroke: '#10B981'
+// The plan is drawn landscape on wider screens. On phones it is turned a quarter
+// turn anticlockwise (entrance at the top) so it runs down the screen and every
+// desk stays big enough to tap.
+const CROP = FLOOR_CROP;
+const LANDSCAPE = { width: CROP.width, height: CROP.height };
+const PORTRAIT = { width: CROP.height, height: CROP.width };
+
+// Where each side ends up after the anticlockwise turn.
+const PORTRAIT_SIDE = { top: 'left', right: 'top', bottom: 'right', left: 'bottom' };
+
+export const DESK_LOOK = {
+  // Silverfin palette: Ice for free, Smoke/slate for taken, Indigo for yours.
+  free: { bg: '#E8F8FC', border: '#13C5E2', text: '#036483', bar: 'rgba(1,46,68,0.4)', chair: '#A7E6F3' },
+  booked: { bg: '#D9E1E8', border: '#B8C4D1', text: '#334155', bar: 'rgba(51,65,85,0.4)', chair: '#C3CDD8' },
+  mine: { bg: '#04588C', border: '#04588C', text: '#FFFFFF', bar: 'rgba(255,255,255,0.6)', chair: '#7FB3D3' }
 };
 
-const BOOKED_DESK_COLORS = {
-  fill: '#E57373',
-  stroke: '#C62828'
+const SIZES = {
+  lg: { chairOffset: 16, chairLong: 28, chairShort: 9, barInset: 5, barThickness: 4, pad: 9, barPad: 16, radius: 10 },
+  sm: { chairOffset: 12, chairLong: 20, chairShort: 7, barInset: 4, barThickness: 3, pad: 3, barPad: 9, radius: 8 }
 };
 
-const BOOKER_NAME_FONT_SIZE = 11.5;
+const FURNITURE_TONE = {
+  soft: { fill: '#E4E9EF', stroke: '#B8C4D1' },
+  light: { fill: '#EEF2F5', stroke: '#B8C4D1' },
+  dark: { fill: '#475569', stroke: 'none' }
+};
 
-function getScreenRect(width, height, chairPosition) {
-  if (chairPosition === 'top') {
-    return { x: width / 2 - 20, y: height - 20, width: 40, height: 8 };
-  }
-
-  if (chairPosition === 'bottom') {
-    return { x: width / 2 - 20, y: 12, width: 40, height: 8 };
-  }
-
-  if (chairPosition === 'left') {
-    return { x: width - 20, y: height / 2 - 20, width: 8, height: 40 };
-  }
-
-  return { x: 12, y: height / 2 - 20, width: 8, height: 40 };
+function toPoint([x, y], portrait) {
+  return portrait ? [y - CROP.y, CROP.x + CROP.width - x] : [x - CROP.x, y - CROP.y];
 }
 
-function normalizeName(name) {
-  if (typeof name !== 'string') {
-    return '';
+function toRect(rect, portrait) {
+  if (!portrait) {
+    return { x: rect.x - CROP.x, y: rect.y - CROP.y, width: rect.width, height: rect.height };
   }
 
-  return name.trim().replace(/\s+/g, ' ');
+  return {
+    x: rect.y - CROP.y,
+    y: CROP.x + CROP.width - (rect.x + rect.width),
+    width: rect.height,
+    height: rect.width
+  };
 }
 
-function truncate(text, maxLength) {
-  if (!text || text.length <= maxLength) {
-    return text;
-  }
-
-  return `${text.slice(0, maxLength - 1)}…`;
+function pointsToPath(points, portrait, close = false) {
+  const segments = points.map((point, index) => {
+    const [x, y] = toPoint(point, portrait);
+    return `${index === 0 ? 'M' : 'L'} ${x} ${y}`;
+  });
+  return `${segments.join(' ')}${close ? ' Z' : ''}`;
 }
 
-function getLandscapeNameLines(name, deskWidth) {
-  const normalized = normalizeName(name);
-  if (!normalized) {
-    return [];
-  }
-
-  const maxLines = 3;
-  const maxCharsPerLine = Math.max(6, Math.floor((deskWidth - 18) / 5.6));
-  const words = normalized.split(' ');
-  const lines = [];
-  let currentLine = '';
-
-  for (const word of words) {
-    const candidate = currentLine ? `${currentLine} ${word}` : word;
-    if (candidate.length <= maxCharsPerLine) {
-      currentLine = candidate;
-    } else if (currentLine) {
-      lines.push(currentLine);
-      currentLine = word;
-    } else {
-      lines.push(word.slice(0, maxCharsPerLine - 1));
-      currentLine = word.slice(maxCharsPerLine - 1);
-    }
-
-    if (lines.length >= maxLines) {
-      break;
-    }
-  }
-
-  if (lines.length < maxLines && currentLine) {
-    lines.push(currentLine);
-  }
-
-  if (lines.length > maxLines) {
-    return lines.slice(0, maxLines);
-  }
-
-  const capped = lines.slice(0, maxLines);
-  const lastIndex = capped.length - 1;
-
-  if (lastIndex >= 0 && capped[lastIndex].length > maxCharsPerLine) {
-    capped[lastIndex] = truncate(capped[lastIndex], maxCharsPerLine);
-  }
-
-  return capped;
+function percentBox(rect, frame) {
+  return {
+    left: `${(rect.x / frame.width) * 100}%`,
+    top: `${(rect.y / frame.height) * 100}%`,
+    width: `${(rect.width / frame.width) * 100}%`,
+    height: `${(rect.height / frame.height) * 100}%`
+  };
 }
 
-function getPortraitNameLines(name, maxCharsPerLine) {
-  const normalized = normalizeName(name);
-  if (!normalized) {
-    return [];
+function chairStyle(side, size) {
+  const s = SIZES[size];
+  const gap = s.chairOffset - s.chairShort - 1;
+  if (side === 'top' || side === 'bottom') {
+    return {
+      left: '50%',
+      top: side === 'top' ? -s.chairOffset : `calc(100% + ${gap}px)`,
+      width: s.chairLong,
+      height: s.chairShort,
+      transform: 'translateX(-50%)'
+    };
   }
 
-  const [firstNameRaw, ...surnameParts] = normalized.split(' ');
-  const safeMax = Math.max(4, maxCharsPerLine);
-  const firstName = truncate(firstNameRaw, safeMax);
-  const surname = truncate(surnameParts.join(' '), safeMax);
-
-  if (!surname) {
-    return [firstName];
-  }
-
-  return [firstName, surname];
+  return {
+    top: '50%',
+    left: side === 'left' ? -s.chairOffset : `calc(100% + ${gap}px)`,
+    width: s.chairShort,
+    height: s.chairLong,
+    transform: 'translateY(-50%)'
+  };
 }
 
-function Chair({ x, y, rotation = 0 }) {
+// The monitor sits on the side of the desk opposite the chair.
+function monitorStyle(chairSide, size) {
+  const s = SIZES[size];
+  const far = `calc(100% - ${s.barInset + s.barThickness}px)`;
+  if (chairSide === 'top' || chairSide === 'bottom') {
+    return {
+      left: '50%',
+      top: chairSide === 'top' ? far : s.barInset,
+      width: '42%',
+      height: s.barThickness,
+      transform: 'translateX(-50%)'
+    };
+  }
+
+  return {
+    top: '50%',
+    left: chairSide === 'left' ? far : s.barInset,
+    width: s.barThickness,
+    height: '42%',
+    transform: 'translateY(-50%)'
+  };
+}
+
+function contentPadding(chairSide, size) {
+  const { pad, barPad } = SIZES[size];
+  const sides = { top: pad, right: pad, bottom: pad, left: pad };
+  const monitorSide = { top: 'bottom', bottom: 'top', left: 'right', right: 'left' }[chairSide];
+  sides[monitorSide] = barPad;
+  return `${sides.top}px ${sides.right}px ${sides.bottom}px ${sides.left}px`;
+}
+
+export function getDeskStatus(booking, user) {
+  if (!booking) {
+    return 'free';
+  }
+
+  return isOwnBooking(booking, user) ? 'mine' : 'booked';
+}
+
+export function Avatar({ name, size = 22, tone = '#5B6B80', className = '' }) {
   return (
-    <g transform={`translate(${x}, ${y}) rotate(${rotation})`}>
-      <rect
-        x="-10"
-        y="-6"
-        width="20"
-        height="12"
-        rx="2"
-        fill="#E0E0E0"
-        stroke="#757575"
-        strokeWidth="1.5"
-      />
-      <rect
-        x="-8"
-        y="-10"
-        width="16"
-        height="4"
-        rx="1"
-        fill="#E0E0E0"
-        stroke="#757575"
-        strokeWidth="1.5"
-      />
-    </g>
+    <span
+      aria-hidden="true"
+      className={`inline-flex flex-none items-center justify-center rounded-full font-bold text-white ${className}`}
+      style={{ width: size, height: size, background: tone, fontSize: Math.max(8, Math.round(size * 0.4)) }}
+    >
+      {getInitials(name)}
+    </span>
   );
 }
 
-function FloorPlan({ bookings, onAvailableDeskClick, onBookedDeskClick }) {
+function DeskTile({ desk, portrait, frame, booking, status, isSelected, onSelect }) {
+  const size = portrait ? 'sm' : 'lg';
+  const look = DESK_LOOK[status];
+  const side = portrait ? PORTRAIT_SIDE[desk.chairPosition] : desk.chairPosition;
+  const rect = toRect(desk, portrait);
+  const name = booking?.username ?? '';
+  const label =
+    status === 'free'
+      ? `Desk ${desk.id}, free`
+      : status === 'mine'
+        ? `Desk ${desk.id}, your booking`
+        : `Desk ${desk.id}, booked by ${name}`;
+
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      aria-pressed={isSelected}
+      title={label}
+      onClick={() => onSelect(desk.id)}
+      className="absolute flex cursor-pointer transition-transform duration-100 hover:-translate-y-px focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-[3px] focus-visible:outline-[#007AB7]"
+      style={{
+        ...percentBox(rect, frame),
+        boxSizing: 'border-box',
+        padding: contentPadding(side, size),
+        border: `1.5px solid ${look.border}`,
+        borderRadius: SIZES[size].radius,
+        background: look.bg,
+        color: look.text,
+        zIndex: isSelected ? 3 : 1,
+        boxShadow: isSelected
+          ? `0 0 0 ${portrait ? 2 : 3}px #FFFFFF, 0 0 0 ${portrait ? 5 : 6}px #007AB7`
+          : portrait
+            ? 'none'
+            : '0 1px 2px rgba(13,14,32,0.06)',
+        ...(portrait
+          ? { flexWrap: 'wrap', alignItems: 'center', alignContent: 'center', justifyContent: 'center', gap: '3px 4px' }
+          : { flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'space-between', gap: 4, textAlign: 'left' })
+      }}
+    >
+      <span
+        aria-hidden="true"
+        className="absolute"
+        style={{ ...chairStyle(side, size), background: look.chair, borderRadius: portrait ? 3 : 4 }}
+      />
+      <span
+        aria-hidden="true"
+        className="absolute"
+        style={{ ...monitorStyle(side, size), background: look.bar, borderRadius: 2 }}
+      />
+
+      <span className={`font-bold leading-none ${portrait ? 'text-xs' : 'text-[15px]'}`}>{desk.id}</span>
+
+      {portrait ? (
+        status === 'booked' ? <Avatar name={name} size={18} /> : null
+      ) : status === 'free' ? (
+        <span className="text-xs font-semibold leading-none">Free</span>
+      ) : status === 'mine' ? (
+        <span className="rounded-full bg-white/20 px-2 py-[3px] text-xs font-bold leading-none">You</span>
+      ) : (
+        <span className="flex min-w-0 max-w-full flex-wrap items-center gap-[5px]">
+          <Avatar name={name} size={22} />
+          <span className="min-w-0 max-w-full truncate text-xs font-semibold leading-tight">{getFirstName(name)}</span>
+        </span>
+      )}
+    </button>
+  );
+}
+
+function RoomDrawing({ portrait, patternId }) {
+  const frame = portrait ? PORTRAIT : LANDSCAPE;
+  const wallWidth = portrait ? 6 : 4;
+  const lineWidth = portrait ? 3 : 2;
+  const { arc } = ENTRANCE;
+  const [ax, ay] = toPoint(arc.from, portrait);
+  const [cx, cy] = toPoint(arc.control, portrait);
+  const [bx, by] = toPoint(arc.to, portrait);
+  const jambs = ENTRANCE.jambs.map((jamb) => pointsToPath(jamb, portrait)).join(' ');
+  const outline = pointsToPath(ROOM_OUTLINE, portrait, true);
+
+  return (
+    <svg
+      viewBox={`0 0 ${frame.width} ${frame.height}`}
+      aria-hidden="true"
+      className="absolute inset-0 h-full w-full"
+    >
+      <defs>
+        <pattern id={patternId} width={portrait ? 28 : 24} height={portrait ? 28 : 24} patternUnits="userSpaceOnUse">
+          <circle cx={portrait ? 3 : 2} cy={portrait ? 3 : 2} r={portrait ? 2 : 1.4} fill="#DCE3EA" />
+        </pattern>
+      </defs>
+      <path d={outline} fill={portrait ? '#FFFFFF' : '#F8FAFC'} />
+      <path d={outline} fill={`url(#${patternId})`} />
+      <path
+        d={pointsToPath(ROOM_WALLS, portrait)}
+        fill="none"
+        stroke="#9AA8B8"
+        strokeWidth={wallWidth}
+        strokeLinejoin="round"
+      />
+      <path d={jambs} stroke="#9AA8B8" strokeWidth={lineWidth} />
+      <path
+        d={`M ${ax} ${ay} Q ${cx} ${cy} ${bx} ${by}`}
+        stroke="#9AA8B8"
+        strokeWidth={lineWidth}
+        fill="none"
+        strokeDasharray={portrait ? '6 6' : '4 4'}
+      />
+      {LOUNGE.map((item) => {
+        const rect = toRect(item, portrait);
+        const tone = FURNITURE_TONE[item.tone];
+        return (
+          <rect
+            key={item.id}
+            {...rect}
+            rx={item.rx}
+            fill={tone.fill}
+            stroke={tone.stroke}
+            strokeWidth={tone.stroke === 'none' ? 0 : portrait ? 3 : 2}
+          />
+        );
+      })}
+    </svg>
+  );
+}
+
+const LABEL_CLASS = 'pointer-events-none absolute whitespace-nowrap font-bold uppercase tracking-[0.08em] text-[#5B6475]';
+
+function ArrowIcon({ direction }) {
+  return (
+    <svg
+      width={direction === 'up' ? 11 : 14}
+      height={direction === 'up' ? 11 : 14}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={direction === 'up' ? 3 : 2.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {direction === 'up' ? <path d="M12 19V5M6 11l6-6 6 6" /> : <path d="M5 12h14M13 6l6 6-6 6" />}
+    </svg>
+  );
+}
+
+function LandscapeLabels() {
+  const centred = 'translate(-50%, -50%)';
+  return (
+    <>
+      <span className={`${LABEL_CLASS} text-xs`} style={{ left: '18.6%', top: '14%', transform: centred }}>
+        Left pod
+      </span>
+      <span className={`${LABEL_CLASS} text-xs`} style={{ left: '52.97%', top: '61.8%', transform: centred }}>
+        Centre pod
+      </span>
+      <span className={`${LABEL_CLASS} text-xs`} style={{ left: '85.17%', top: '16.6%', transform: centred }}>
+        Right pod
+      </span>
+      <span className={`${LABEL_CLASS} text-xs`} style={{ left: '83.5%', top: '93.4%', transform: centred }}>
+        Lounge
+      </span>
+      <span
+        className={`${LABEL_CLASS} flex items-center gap-1 text-xs`}
+        style={{ right: '6.2%', top: '11%', transform: 'translateY(-50%)' }}
+      >
+        Entrance
+        <ArrowIcon direction="right" />
+      </span>
+    </>
+  );
+}
+
+function PortraitLabels() {
+  const centred = 'translate(-50%, -50%)';
+  return (
+    <>
+      <span
+        className={`${LABEL_CLASS} flex flex-col items-center gap-0.5 text-[10px] tracking-[0.04em]`}
+        style={{ left: '12.5%', top: '6.5%', transform: 'translateX(-50%)' }}
+      >
+        <ArrowIcon direction="up" />
+        Entrance
+      </span>
+      <span className={`${LABEL_CLASS} text-[10px]`} style={{ left: '37%', top: '28.2%', transform: centred }}>
+        Right pod
+      </span>
+      <span className={`${LABEL_CLASS} text-[10px]`} style={{ left: '30%', top: '60%', transform: centred }}>
+        Centre pod
+      </span>
+      <span className={`${LABEL_CLASS} text-[10px] leading-tight`} style={{ left: '5%', top: '79%' }}>
+        Left
+        <br />
+        pod
+      </span>
+      <span className={`${LABEL_CLASS} text-[10px]`} style={{ left: '78%', top: '28.6%', transform: centred }}>
+        Lounge
+      </span>
+
+      <div
+        className="pointer-events-none absolute flex flex-col gap-2.5 text-xs font-semibold text-white"
+        style={{ left: '76%', top: '40%' }}
+      >
+        <LegendItem look={DESK_LOOK.free} label="Free" small />
+        <LegendItem look={DESK_LOOK.booked} label="Booked" small />
+        <LegendItem look={DESK_LOOK.mine} label="You" small />
+      </div>
+    </>
+  );
+}
+
+export function LegendItem({ look, label, small = false }) {
+  return (
+    <span className={`flex items-center ${small ? 'gap-1.5' : 'gap-2'}`}>
+      <span
+        aria-hidden="true"
+        className="box-border rounded"
+        style={{
+          width: small ? 14 : 18,
+          height: 14,
+          background: look.bg,
+          border: `1.5px solid ${look.border}`
+        }}
+      />
+      {label}
+    </span>
+  );
+}
+
+function Plan({ portrait, bookingsByDesk, currentUser, selectedDeskId, onSelectDesk }) {
+  const frame = portrait ? PORTRAIT : LANDSCAPE;
+
+  return (
+    <div
+      role="group"
+      aria-label="Office floor plan"
+      className={`relative w-full ${portrait ? 'mx-auto max-w-[420px]' : ''}`}
+      style={{ aspectRatio: `${frame.width} / ${frame.height}` }}
+    >
+      <RoomDrawing portrait={portrait} patternId={portrait ? 'floor-dots-portrait' : 'floor-dots-landscape'} />
+      {portrait ? <PortraitLabels /> : <LandscapeLabels />}
+      {DESKS.map((desk) => {
+        const booking = bookingsByDesk[desk.id];
+        return (
+          <DeskTile
+            key={desk.id}
+            desk={desk}
+            portrait={portrait}
+            frame={frame}
+            booking={booking}
+            status={getDeskStatus(booking, currentUser)}
+            isSelected={selectedDeskId === desk.id}
+            onSelect={onSelectDesk}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+// A thumbnail of the (phone-orientation) plan with one desk highlighted.
+export function MiniMap({ deskId, dark = false, className = '' }) {
+  const outline = pointsToPath(ROOM_OUTLINE, true, true);
+  return (
+    <div
+      role="img"
+      aria-label={`Desk ${deskId} on the floor plan`}
+      className={`relative flex-none ${className}`}
+      style={{ aspectRatio: `${PORTRAIT.width} / ${PORTRAIT.height}` }}
+    >
+      <svg viewBox={`0 0 ${PORTRAIT.width} ${PORTRAIT.height}`} aria-hidden="true" className="absolute inset-0 h-full w-full">
+        <path
+          d={outline}
+          fill={dark ? 'rgba(255,255,255,0.12)' : '#FFFFFF'}
+          stroke={dark ? 'rgba(255,255,255,0.55)' : '#B8C4D1'}
+          strokeWidth={dark ? 14 : 20}
+          strokeLinejoin="round"
+        />
+      </svg>
+      {DESKS.map((desk) => {
+        const hit = desk.id === deskId;
+        return (
+          <span
+            key={desk.id}
+            aria-hidden="true"
+            className="absolute rounded-[2px]"
+            style={{
+              ...percentBox(toRect(desk, true), PORTRAIT),
+              background: hit ? (dark ? '#13C5E2' : '#04588C') : dark ? 'rgba(255,255,255,0.35)' : '#CBD5E1',
+              boxShadow: hit && dark ? '0 0 0 2px #04588C, 0 0 0 4px #13C5E2' : 'none'
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function FloorPlan({ bookings, currentUser, selectedDeskId, onSelectDesk }) {
   const bookingsByDesk = useMemo(() => {
     const nextMap = {};
     (bookings ?? []).forEach((booking) => {
@@ -148,146 +446,17 @@ function FloorPlan({ bookings, onAvailableDeskClick, onBookedDeskClick }) {
     return nextMap;
   }, [bookings]);
 
+  const shared = { bookingsByDesk, currentUser, selectedDeskId, onSelectDesk };
+
   return (
-    <div className="relative overflow-x-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-lg">
-      <svg
-        viewBox={`0 0 ${FLOOR_WIDTH} ${FLOOR_HEIGHT}`}
-        className="h-auto min-w-[960px] w-full"
-        role="img"
-        aria-label="Office desk layout"
-      >
-        <path
-          d="M 100 60 L 1200 60 L 1200 750 L 900 750 L 900 560 L 100 560 Z"
-          fill="#F8FAFC"
-          stroke="none"
-        />
-
-        <line x1="100" y1="60" x2="1200" y2="60" stroke="#94A3B8" strokeWidth="2.5" />
-        <line x1="1200" y1="60" x2="1200" y2="80" stroke="#94A3B8" strokeWidth="2.5" />
-        <line x1="1200" y1="160" x2="1200" y2="750" stroke="#94A3B8" strokeWidth="2.5" />
-        <line x1="1200" y1="750" x2="900" y2="750" stroke="#94A3B8" strokeWidth="2.5" />
-        <line x1="900" y1="750" x2="900" y2="560" stroke="#94A3B8" strokeWidth="2.5" />
-        <line x1="900" y1="560" x2="100" y2="560" stroke="#94A3B8" strokeWidth="2.5" />
-        <line x1="100" y1="560" x2="100" y2="60" stroke="#94A3B8" strokeWidth="2.5" />
-
-        <line x1="1200" y1="80" x2="1230" y2="80" stroke="#94A3B8" strokeWidth="2" />
-        <line x1="1200" y1="160" x2="1230" y2="160" stroke="#94A3B8" strokeWidth="2" />
-        <path d="M 1230 80 Q 1240 120 1230 160" stroke="#94A3B8" strokeWidth="1.5" fill="none" />
-
-        {CHAIRS.map((chair, index) => (
-          <Chair key={`chair-${index}`} x={chair.x} y={chair.y} rotation={chair.rotation} />
-        ))}
-
-        <g aria-hidden="true" opacity="0.9">
-          <rect x="965" y="528" width="170" height="58" rx="20" fill="#CBD5E1" stroke="#94A3B8" strokeWidth="2" />
-          <rect x="978" y="514" width="144" height="20" rx="10" fill="#E2E8F0" stroke="#94A3B8" strokeWidth="1.5" />
-          <rect x="974" y="579" width="18" height="12" rx="4" fill="#94A3B8" opacity="0.55" />
-          <rect x="1108" y="579" width="18" height="12" rx="4" fill="#94A3B8" opacity="0.55" />
-          <circle cx="1048" cy="648" r="26" fill="#D1D5DB" stroke="#94A3B8" strokeWidth="2" />
-          <line x1="1048" y1="674" x2="1048" y2="686" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
-          <line x1="1038" y1="686" x2="1058" y2="686" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" />
-        </g>
-
-        {DESKS.map((desk) => {
-          const booking = bookingsByDesk[desk.id];
-          const isBooked = Boolean(booking);
-          const deskColors = isBooked ? BOOKED_DESK_COLORS : AVAILABLE_DESK_COLORS;
-          const screenRect = getScreenRect(desk.width, desk.height, desk.chairPosition);
-          const isPortraitDesk = desk.height > desk.width;
-          const landscapeNameLines =
-            isBooked && !isPortraitDesk ? getLandscapeNameLines(booking.username, desk.width) : [];
-          const portraitNameX = desk.width / 2;
-          const portraitNameAnchor = 'middle';
-          const portraitMaxChars = Math.max(6, Math.floor((desk.width - 30) / 7));
-          const portraitNameLines =
-            isBooked && isPortraitDesk ? getPortraitNameLines(booking.username, portraitMaxChars) : [];
-          const portraitNameY = screenRect.y + 16;
-
-          return (
-            <g
-              key={desk.id}
-              transform={`translate(${desk.x}, ${desk.y})`}
-              className="cursor-pointer"
-              onClick={() => {
-                if (isBooked) {
-                  onBookedDeskClick({ desk, booking });
-                } else {
-                  onAvailableDeskClick(desk);
-                }
-              }}
-            >
-              <rect
-                width={desk.width}
-                height={desk.height}
-                rx="12"
-                fill={deskColors.fill}
-                stroke={deskColors.stroke}
-                strokeWidth="3"
-              />
-
-              <text
-                x="10"
-                y="12"
-                textAnchor="start"
-                dominantBaseline="hanging"
-                fill="white"
-                fontSize="16"
-                fontWeight="700"
-              >
-                {desk.id}
-              </text>
-
-              {landscapeNameLines.length > 0 ? (
-                <text
-                  x="10"
-                  y="40"
-                  textAnchor="start"
-                  fill="white"
-                  fontSize={BOOKER_NAME_FONT_SIZE}
-                  fontWeight="700"
-                >
-                  {landscapeNameLines.map((line, lineIndex) => (
-                    <tspan key={`${desk.id}-name-${lineIndex}`} x="10" dy={lineIndex === 0 ? 0 : 13}>
-                      {line}
-                    </tspan>
-                  ))}
-                </text>
-              ) : null}
-
-              {portraitNameLines.length > 0 ? (
-                <text
-                  x={portraitNameX}
-                  y={portraitNameY}
-                  textAnchor={portraitNameAnchor}
-                  fill="white"
-                  fontSize={BOOKER_NAME_FONT_SIZE}
-                  fontWeight="700"
-                >
-                  {portraitNameLines.map((line, lineIndex) => (
-                    <tspan
-                      key={`${desk.id}-portrait-name-${lineIndex}`}
-                      x={portraitNameX}
-                      dy={lineIndex === 0 ? 0 : 11}
-                    >
-                      {line}
-                    </tspan>
-                  ))}
-                </text>
-              ) : null}
-
-              <rect
-                x={screenRect.x}
-                y={screenRect.y}
-                width={screenRect.width}
-                height={screenRect.height}
-                rx="2"
-                fill="#1B5E20"
-              />
-            </g>
-          );
-        })}
-      </svg>
-    </div>
+    <>
+      <div className="hidden md:block">
+        <Plan portrait={false} {...shared} />
+      </div>
+      <div className="md:hidden">
+        <Plan portrait {...shared} />
+      </div>
+    </>
   );
 }
 

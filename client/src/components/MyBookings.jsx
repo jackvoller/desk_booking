@@ -1,202 +1,162 @@
-function getWeekdayLabel(dateString) {
-  const [year, month, day] = (dateString ?? '').split('-').map(Number);
-  if (!year || !month || !day) {
-    return '-';
-  }
+import { getDeskZone } from '../config/floorPlanSchema';
+import { isOwnBooking } from '../utils/bookings';
+import { getDateParts, todayDateString } from '../utils/date';
+import { CARD } from './DeskPanel';
+import { MiniMap } from './FloorPlan';
 
-  const date = new Date(year, month - 1, day);
-  return date.toLocaleDateString(undefined, { weekday: 'short' });
+function bookingKey(booking) {
+  return booking._id ?? booking.id ?? `${booking.date}-${booking.deskId}-${booking.userId}`;
 }
 
-function getTodayDateKey() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function BookingTable({ bookings, deskNameById, onOpenBooking, onDeleteBooking, isAdmin }) {
-  if (!bookings.length) {
-    return <p className="mt-2 text-sm text-slate-500">None</p>;
-  }
-
+function TodayCard({ booking, onOpenBooking }) {
+  const parts = getDateParts(booking.date);
   return (
-    <div className="mt-3">
-      <div className="space-y-3 md:hidden">
-        {bookings.map((booking) => (
-          <article
-            key={booking._id ?? `${booking.date}-${booking.deskId}-${booking.userId}`}
-            className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-slate-900">{booking.date}</p>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{getWeekdayLabel(booking.date)}</p>
-              </div>
-              <span className="rounded-full bg-white px-2 py-1 text-xs font-semibold text-slate-600">
-                {deskNameById[booking.deskId] ?? booking.deskId}
-              </span>
-            </div>
-
-            {isAdmin ? (
-              <div className="mt-2 space-y-1 text-xs text-slate-600">
-                <p>
-                  <span className="font-semibold text-slate-700">User:</span> {booking.username ?? '-'}
-                </p>
-                <p className="break-all">
-                  <span className="font-semibold text-slate-700">Email:</span> {booking.email ?? '-'}
-                </p>
-              </div>
-            ) : null}
-
-            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <button
-                type="button"
-                className="rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
-                onClick={() => onOpenBooking(booking)}
-              >
-                Open in Desk View
-              </button>
-              <button
-                type="button"
-                className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-100"
-                onClick={() => onDeleteBooking(booking)}
-              >
-                Delete
-              </button>
-            </div>
-          </article>
-        ))}
+    <section aria-label="Today" className="flex items-stretch gap-[18px] rounded-[22px] bg-sfIce p-[18px] text-sfNavy shadow-[0_12px_40px_rgba(0,20,35,0.35)] md:max-w-xl">
+      <div className="flex min-w-0 flex-1 flex-col justify-between gap-3.5">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.08em] text-sfNavy/75">
+            Today · {parts.weekdayShort} {parts.day} {parts.monthShort}
+          </p>
+          <p className="mt-1.5 font-heading text-[52px] font-bold leading-none">{booking.deskId}</p>
+          <p className="mt-1 text-base font-semibold">{getDeskZone(booking.deskId)}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => onOpenBooking(booking)}
+          className="flex h-11 items-center gap-2 self-start rounded-xl bg-sfNavy px-4 text-[15px] font-bold text-white transition hover:bg-[#04588C]"
+        >
+          Show on plan
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M5 12h14M13 6l6 6-6 6" />
+          </svg>
+        </button>
       </div>
-
-      <div className="hidden overflow-x-auto md:block">
-        <table className="min-w-full border-separate border-spacing-y-2">
-          <thead>
-            <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-              <th className="px-3 py-2">Date</th>
-              <th className="px-3 py-2">Day</th>
-              <th className="px-3 py-2">Desk</th>
-              {isAdmin ? <th className="px-3 py-2">User</th> : null}
-              {isAdmin ? <th className="px-3 py-2">Email</th> : null}
-              <th className="px-3 py-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {bookings.map((booking) => (
-              <tr
-                key={booking._id ?? `${booking.date}-${booking.deskId}-${booking.userId}`}
-                className="rounded-lg bg-slate-50 text-sm text-slate-700"
-              >
-                <td className="rounded-l-lg px-3 py-3 font-medium text-slate-900">{booking.date}</td>
-                <td className="px-3 py-3">{getWeekdayLabel(booking.date)}</td>
-                <td className="px-3 py-3">{deskNameById[booking.deskId] ?? booking.deskId}</td>
-                {isAdmin ? <td className="px-3 py-3">{booking.username ?? '-'}</td> : null}
-                {isAdmin ? <td className="px-3 py-3">{booking.email ?? '-'}</td> : null}
-                <td className="rounded-r-lg px-3 py-3">
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
-                      onClick={() => onOpenBooking(booking)}
-                    >
-                      Open in Desk View
-                    </button>
-                    <button
-                      type="button"
-                      className="rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-100"
-                      onClick={() => onDeleteBooking(booking)}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+      <MiniMap deskId={booking.deskId} className="w-[92px] rounded-[10px] bg-white/40" />
+    </section>
   );
 }
 
-function MyBookings({ bookings, deskNameById, isLoading, onOpenBooking, onDeleteBooking, isAdmin, onExportCsv }) {
-  if (isLoading) {
-    return (
-      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-lg sm:p-5">
-        <p className="text-sm text-slate-600">Loading your bookings...</p>
-      </section>
-    );
-  }
-
-  if (!bookings.length) {
-    return (
-      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-lg sm:p-5">
-        <h3 className="text-lg font-semibold text-slate-900">{isAdmin ? 'All Bookings' : 'My Bookings'}</h3>
-        <p className="mt-2 text-sm text-slate-600">
-          {isAdmin ? 'There are no bookings yet.' : 'You have no bookings yet.'}
+function BookingRow({ booking, isAdmin, isPast, onOpenBooking, onDeleteBooking }) {
+  const parts = getDateParts(booking.date);
+  return (
+    <article className={`${CARD} flex items-center gap-3.5 rounded-[18px] p-3.5`}>
+      <div className="w-12 flex-none text-center">
+        <p className="text-xs font-bold uppercase tracking-[0.06em] text-[#5B6475]">{parts.weekdayShort}</p>
+        <p className="mt-0.5 font-heading text-[26px] font-bold leading-none">{parts.day}</p>
+        <p className="mt-0.5 text-xs text-[#5B6475]">{parts.monthShort}</p>
+      </div>
+      <MiniMap deskId={booking.deskId} className="w-10 rounded-md bg-[#F4F6F9]" />
+      <button
+        type="button"
+        onClick={() => onOpenBooking(booking)}
+        className="min-w-0 flex-1 rounded-lg text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#007AB7]"
+        aria-label={`Show desk ${booking.deskId} on ${parts.weekdayLong} ${parts.day} ${parts.monthLong} on the plan`}
+      >
+        <p className="text-[17px] font-bold">Desk {booking.deskId}</p>
+        <p className="mt-0.5 truncate text-sm text-[#4A5568]">
+          {isAdmin ? booking.username ?? '—' : getDeskZone(booking.deskId)}
         </p>
+        {isAdmin && booking.email ? <p className="truncate text-xs text-[#5B6475]">{booking.email}</p> : null}
+      </button>
+      {!isPast || isAdmin ? (
+        <button
+          type="button"
+          aria-label={`Cancel desk ${booking.deskId} on ${parts.weekdayShort} ${parts.day} ${parts.monthLong}`}
+          onClick={() => onDeleteBooking(booking)}
+          className="h-11 flex-none rounded-xl border border-[#E8B4AE] bg-white px-3.5 text-sm font-bold text-[#B42318] transition hover:bg-[#FEF3F2]"
+        >
+          {isAdmin ? 'Remove' : 'Cancel'}
+        </button>
+      ) : null}
+    </article>
+  );
+}
+
+function MyBookings({ bookings, currentUser, isLoading, onOpenBooking, onDeleteBooking, isAdmin, onExportCsv }) {
+  const title = isAdmin ? 'All bookings' : 'My bookings';
+  const todayKey = todayDateString();
+
+  if (isLoading && !bookings.length) {
+    return (
+      <section>
+        <h1 className="font-heading text-[28px] font-bold text-white md:text-[34px]">{title}</h1>
+        <p className="mt-2 text-[15px] text-[#C9DCE6]">Loading bookings…</p>
       </section>
     );
   }
 
-  const todayKey = getTodayDateKey();
-  const upcomingBookings = bookings
-    .filter((booking) => booking.date >= todayKey)
-    .sort((a, b) => a.date.localeCompare(b.date) || a.deskId.localeCompare(b.deskId));
-  const pastBookings = bookings
-    .filter((booking) => booking.date < todayKey)
-    .sort((a, b) => b.date.localeCompare(a.date) || a.deskId.localeCompare(b.deskId));
+  const sorted = [...bookings].sort((a, b) => a.date.localeCompare(b.date) || a.deskId.localeCompare(b.deskId));
+  const todayBooking = !isAdmin
+    ? sorted.find((booking) => booking.date === todayKey && isOwnBooking(booking, currentUser)) ?? null
+    : null;
+  const upcoming = sorted.filter((booking) => booking.date >= todayKey && booking !== todayBooking);
+  const past = sorted.filter((booking) => booking.date < todayKey).reverse();
+  const upcomingCount = upcoming.length + (todayBooking ? 1 : 0);
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-lg sm:p-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <section className="flex flex-col gap-3.5">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h3 className="text-lg font-semibold text-slate-900">{isAdmin ? 'All Bookings' : 'My Bookings'}</h3>
-          <p className="mt-1 text-sm text-slate-600">
-            {isAdmin
-              ? 'View and manage all desk bookings across users.'
-              : 'Open a booking in Desk View or remove it directly.'}
+          <h1 className="font-heading text-[28px] font-bold text-white md:text-[34px]">{title}</h1>
+          <p className="mt-1 text-sm text-[#C9DCE6] md:text-[15px]">
+            {upcomingCount === 0
+              ? isAdmin
+                ? 'There are no upcoming bookings.'
+                : 'Nothing booked yet.'
+              : `${upcomingCount} upcoming ${upcomingCount === 1 ? 'booking' : 'bookings'}`}
           </p>
         </div>
         {isAdmin ? (
           <button
             type="button"
-            className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 sm:w-auto sm:py-1.5"
             onClick={onExportCsv}
+            className="h-11 rounded-xl border border-white/25 px-4 text-sm font-semibold text-white transition hover:bg-white/10"
           >
             Export to CSV
           </button>
         ) : null}
       </div>
 
-      <div className="mt-4 grid gap-5">
-        <div>
-          <h4 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
-            Upcoming ({upcomingBookings.length})
-          </h4>
-          <BookingTable
-            bookings={upcomingBookings}
-            deskNameById={deskNameById}
-            onOpenBooking={onOpenBooking}
-            onDeleteBooking={onDeleteBooking}
-            isAdmin={isAdmin}
-          />
-        </div>
+      {todayBooking ? <TodayCard booking={todayBooking} onOpenBooking={onOpenBooking} /> : null}
 
-        <div>
-          <h4 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
-            Past ({pastBookings.length})
-          </h4>
-          <BookingTable
-            bookings={pastBookings}
-            deskNameById={deskNameById}
-            onOpenBooking={onOpenBooking}
-            onDeleteBooking={onDeleteBooking}
-            isAdmin={isAdmin}
-          />
+      <h2 className="mx-1 mt-1.5 text-[13px] font-bold uppercase tracking-[0.08em] text-[#9CC3D6]">Coming up</h2>
+      {upcoming.length ? (
+        <div className="grid gap-3 lg:grid-cols-2">
+          {upcoming.map((booking) => (
+            <BookingRow
+              key={bookingKey(booking)}
+              booking={booking}
+              isAdmin={isAdmin}
+              onOpenBooking={onOpenBooking}
+              onDeleteBooking={onDeleteBooking}
+            />
+          ))}
         </div>
-      </div>
+      ) : (
+        <div className={`${CARD} rounded-[18px] p-5 text-[15px] text-[#4A5568]`}>
+          {isAdmin ? 'No upcoming bookings.' : 'Nothing else booked. Pick a desk on the floor plan.'}
+        </div>
+      )}
+
+      {past.length ? (
+        <details className="mt-2">
+          <summary className="mx-1 cursor-pointer text-[13px] font-bold uppercase tracking-[0.08em] text-[#9CC3D6]">
+            Past ({past.length})
+          </summary>
+          <div className="mt-3 grid gap-3 lg:grid-cols-2">
+            {past.map((booking) => (
+              <BookingRow
+                key={bookingKey(booking)}
+                booking={booking}
+                isAdmin={isAdmin}
+                isPast
+                onOpenBooking={onOpenBooking}
+                onDeleteBooking={onDeleteBooking}
+              />
+            ))}
+          </div>
+        </details>
+      ) : null}
     </section>
   );
 }

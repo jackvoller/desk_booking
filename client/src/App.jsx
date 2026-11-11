@@ -1,11 +1,23 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import BookingModal from './components/BookingModal';
-import FloorPlan from './components/FloorPlan';
+import { AppHeader, MobileTabBar } from './components/AppNav';
+import BrandBackground from './components/BrandBackground';
+import { BottomSheet, CARD, DeskDetails, InOfficeList, WeekStrip, YourDeskCard } from './components/DeskPanel';
+import FloorPlan, { DESK_LOOK, LegendItem, getDeskStatus } from './components/FloorPlan';
 import MyBookings from './components/MyBookings';
 import MonthlyCalendar from './components/MonthlyCalendar';
-import { DESKS } from './config/floorPlanSchema';
+import { DESKS, getDeskZone } from './config/floorPlanSchema';
 import { api } from './utils/api';
-import { addDays, isWeekendDate, isWithinAdvanceWindow, shiftMonth, todayDateString } from './utils/date';
+import { isOwnBooking } from './utils/bookings';
+import {
+  addDays,
+  formatLongDate,
+  formatShortDate,
+  getWorkWeek,
+  isWeekendDate,
+  isWithinAdvanceWindow,
+  shiftMonth,
+  todayDateString
+} from './utils/date';
 
 const MAX_ADVANCE_DAYS = 30;
 const TODAY = todayDateString();
@@ -19,19 +31,12 @@ const DEFAULT_AUTH_PROVIDERS = {
   admin: false
 };
 
-function findNearestWeekday(dateString, dayOffset) {
-  const step = dayOffset >= 0 ? 1 : -1;
-  let candidate = addDays(dateString, dayOffset);
+function isBookableDate(dateString) {
+  return isWithinAdvanceWindow(dateString, MAX_ADVANCE_DAYS) && !isWeekendDate(dateString);
+}
 
-  while (isWithinAdvanceWindow(candidate, MAX_ADVANCE_DAYS) && isWeekendDate(candidate)) {
-    candidate = addDays(candidate, step);
-  }
-
-  if (!isWithinAdvanceWindow(candidate, MAX_ADVANCE_DAYS) || isWeekendDate(candidate)) {
-    return null;
-  }
-
-  return candidate;
+function firstBookableDayOfWeek(dateString) {
+  return getWorkWeek(dateString).find(isBookableDate) ?? null;
 }
 
 function App() {
@@ -49,7 +54,7 @@ function App() {
   const [myBookings, setMyBookings] = useState([]);
   const [isMyBookingsLoading, setIsMyBookingsLoading] = useState(false);
 
-  const [pendingAction, setPendingAction] = useState(null);
+  const [selectedDeskId, setSelectedDeskId] = useState(null);
   const [bookingFor, setBookingFor] = useState('');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -193,14 +198,12 @@ function App() {
     });
   }, [user, refreshBookingsList]);
 
-  const bookingCountToday = useMemo(() => bookings.length, [bookings]);
-  const myBookingForSelectedDate = useMemo(() => {
-    if (!user?.id) {
-      return null;
-    }
-
-    return bookings.find((booking) => booking.userId === user.id) ?? null;
-  }, [bookings, user?.id]);
+  const bookingCountToday = bookings.length;
+  const freeDeskCount = Math.max(0, DESKS.length - bookingCountToday);
+  const myBookingForSelectedDate = useMemo(
+    () => bookings.find((booking) => isOwnBooking(booking, user)) ?? null,
+    [bookings, user]
+  );
 
   const deskNameById = useMemo(() => {
     const mapping = {};
@@ -209,90 +212,122 @@ function App() {
     });
     return mapping;
   }, []);
-  const previousDate = findNearestWeekday(selectedDate, -1);
-  const nextDate = findNearestWeekday(selectedDate, 1);
-  const canGoPreviousDate = Boolean(previousDate);
-  const canGoNextDate = Boolean(nextDate);
-  const showDateStepper = activeView === 'desk';
 
-  const handleDateChange = (event) => {
-    const nextDate = event.target.value;
-    if (!nextDate) {
+  // Days you're booked in, for the dots on the week strip.
+  const myBookedDates = useMemo(() => {
+    const dates = new Set();
+    myBookings.forEach((booking) => {
+      if (isOwnBooking(booking, user)) {
+        dates.add(booking.date);
+      }
+    });
+    if (myBookingForSelectedDate) {
+      dates.add(selectedDate);
+    }
+    return dates;
+  }, [myBookings, user, myBookingForSelectedDate, selectedDate]);
+
+  const weekDays = useMemo(
+    () =>
+      getWorkWeek(selectedDate).map((date) => ({
+        date,
+        disabled: !isBookableDate(date),
+        hasMine: myBookedDates.has(date),
+        count: date === selectedDate ? bookingCountToday : date.startsWith(calendarMonth) ? dayCounts[date] ?? 0 : null
+      })),
+    [selectedDate, myBookedDates, bookingCountToday, calendarMonth, dayCounts]
+  );
+  const previousWeekDate = firstBookableDayOfWeek(addDays(selectedDate, -7));
+  const nextWeekDate = firstBookableDayOfWeek(addDays(selectedDate, 7));
+
+  const selectedBooking = selectedDeskId ? bookings.find((booking) => booking.deskId === selectedDeskId) ?? null : null;
+  const selectedStatus = getDeskStatus(selectedBooking, user);
+  const peopleInOffice = useMemo(
+    () =>
+      [...bookings]
+        .sort((a, b) => a.deskId.localeCompare(b.deskId))
+        .map((booking) => ({
+          deskId: booking.deskId,
+          name: booking.username ?? '',
+          isMe: isOwnBooking(booking, user)
+        })),
+    [bookings, user]
+  );
+
+  const goToDate = (date) => {
+    if (!date) {
       return;
     }
 
     clearNotices();
-
-    if (!isWithinAdvanceWindow(nextDate, MAX_ADVANCE_DAYS)) {
-      setError(`You can only book from today up to ${MAX_ADVANCE_DAYS} days in advance.`);
-      return;
-    }
-
-    if (isWeekendDate(nextDate)) {
-      setError('Weekend bookings are unavailable. Please choose a weekday.');
-      return;
-    }
-
-    setSelectedDate(nextDate);
-    setCalendarMonth(nextDate.slice(0, 7));
-    setPendingAction(null);
-  };
-
-  const handleQuickDateShift = (dayOffset) => {
-    const targetDate = findNearestWeekday(selectedDate, dayOffset);
-    if (!targetDate) {
-      return;
-    }
-
-    clearNotices();
-    setSelectedDate(targetDate);
-    setCalendarMonth(targetDate.slice(0, 7));
-    setPendingAction(null);
-  };
-
-  const handleAvailableDeskClick = (desk) => {
-    clearNotices();
-
-    if (!user?.isAdmin && myBookingForSelectedDate) {
-      const deskLabel = deskNameById[myBookingForSelectedDate.deskId] ?? myBookingForSelectedDate.deskId;
-      setError(`You already booked ${deskLabel} on ${selectedDate}. You can only book one desk per day.`);
-      return;
-    }
-
-    if (!isWithinAdvanceWindow(selectedDate, MAX_ADVANCE_DAYS)) {
-      setError(`Bookings are limited to a ${MAX_ADVANCE_DAYS}-day window.`);
-      return;
-    }
-
-    if (isWeekendDate(selectedDate)) {
-      setError('Weekend bookings are unavailable. Please choose a weekday.');
-      return;
-    }
-
+    setSelectedDate(date);
+    setCalendarMonth(date.slice(0, 7));
+    setSelectedDeskId(null);
     setBookingFor('');
-    setPendingAction({
-      type: 'book',
-      desk
-    });
   };
 
-  const handleBookedDeskClick = ({ desk, booking }) => {
+  const handleSelectDesk = (deskId) => {
     clearNotices();
+    setBookingFor('');
+    setSelectedDeskId((current) => (current === deskId ? null : deskId));
+  };
 
-    if (!user?.isAdmin && booking?.userId !== user?.id) {
-      setError('You can only remove your own bookings.');
+  const closeDeskDetails = useCallback(() => {
+    setSelectedDeskId(null);
+    setBookingFor('');
+  }, []);
+
+  const refreshAfterChange = () =>
+    Promise.all([loadBookings(selectedDate), loadMonthCounts(calendarMonth), refreshBookingsList()]);
+
+  const handleBookSelectedDesk = async () => {
+    const deskId = selectedDeskId;
+    if (!deskId) {
       return;
     }
 
-    setPendingAction({
-      type: 'unbook',
-      desk,
-      booking
-    });
+    clearNotices();
+
+    if (!isBookableDate(selectedDate)) {
+      setError(`You can only book weekdays from today up to ${MAX_ADVANCE_DAYS} days ahead.`);
+      return;
+    }
+
+    setIsSubmitting(true);
+    const dayLabel = formatLongDate(selectedDate);
+
+    try {
+      const existing = !user?.isAdmin ? myBookingForSelectedDate : null;
+
+      if (existing && existing.deskId !== deskId) {
+        // One desk per day: moving means giving up the old desk first.
+        await api.deleteBooking(existing.deskId, selectedDate);
+        try {
+          await api.createBooking(deskId, selectedDate);
+        } catch (createError) {
+          await api.createBooking(existing.deskId, selectedDate).catch(() => {});
+          throw createError;
+        }
+        setSuccess(`Moved you from ${existing.deskId} to ${deskId} for ${dayLabel}`);
+      } else {
+        const guestName = user?.isAdmin ? bookingFor.trim() : '';
+        await api.createBooking(deskId, selectedDate, guestName);
+        setSuccess(guestName ? `Desk ${deskId} booked for ${guestName} on ${dayLabel}` : `Desk ${deskId} is yours for ${dayLabel}`);
+      }
+
+      setSelectedDeskId(null);
+      setBookingFor('');
+      await refreshAfterChange();
+    } catch (apiError) {
+      setError(apiError.message);
+      await loadBookings(selectedDate).catch(() => {});
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleConfirmDeskAction = async () => {
-    if (!pendingAction?.desk) {
+  const handleRemoveDeskBooking = async (deskId) => {
+    if (!deskId) {
       return;
     }
 
@@ -300,28 +335,26 @@ function App() {
     setIsSubmitting(true);
 
     try {
-      if (pendingAction.type === 'unbook') {
-        await api.deleteBooking(pendingAction.desk.id, selectedDate);
-        setSuccess(`${pendingAction.desk.name} booking removed for ${selectedDate}.`);
-      } else {
-        const guestName = user?.isAdmin ? bookingFor.trim() : '';
-        await api.createBooking(pendingAction.desk.id, selectedDate, guestName);
-        setSuccess(
-          guestName
-            ? `${pendingAction.desk.name} is booked for ${guestName} on ${selectedDate}.`
-            : `${pendingAction.desk.name} is booked for ${selectedDate}.`
-        );
-      }
-
-      setPendingAction(null);
-      setBookingFor('');
-      await Promise.all([loadBookings(selectedDate), loadMonthCounts(calendarMonth), refreshBookingsList()]);
+      await api.deleteBooking(deskId, selectedDate);
+      setSuccess(`Booking for ${deskId} on ${formatLongDate(selectedDate)} cancelled`);
+      setSelectedDeskId(null);
+      await refreshAfterChange();
     } catch (apiError) {
       setError(apiError.message);
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  // Success messages fade on their own; errors stay until dismissed.
+  useEffect(() => {
+    if (!success) {
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => setSuccess(''), 4000);
+    return () => window.clearTimeout(timer);
+  }, [success]);
 
   const handleCalendarDateSelect = (date) => {
     clearNotices();
@@ -338,7 +371,7 @@ function App() {
 
     setSelectedDate(date);
     setCalendarMonth(date.slice(0, 7));
-    setPendingAction(null);
+    setSelectedDeskId(null);
     setActiveView('desk');
   };
 
@@ -353,7 +386,7 @@ function App() {
     setBookings([]);
     setDayCounts({});
     setMyBookings([]);
-    setPendingAction(null);
+    setSelectedDeskId(null);
     setActiveView('desk');
     setAdminPassword('');
   };
@@ -413,7 +446,8 @@ function App() {
     clearNotices();
     setSelectedDate(booking.date);
     setCalendarMonth(booking.date.slice(0, 7));
-    setPendingAction(null);
+    setSelectedDeskId(booking.deskId);
+    setBookingFor('');
     setActiveView('desk');
   };
 
@@ -513,7 +547,8 @@ function App() {
 
   if (isAdminRoute && !user?.isAdmin) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-8">
+      <main className="flex min-h-screen items-center justify-center px-4 py-8">
+        <BrandBackground />
         <section className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-lg">
           <h1 className="text-2xl font-bold text-slate-900">Admin Access</h1>
           <p className="mt-2 text-sm text-slate-600">Sign in with the admin username and password.</p>
@@ -538,7 +573,7 @@ function App() {
                 value={adminUsername}
                 onChange={(event) => setAdminUsername(event.target.value)}
                 placeholder="admin"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-[#1F67A5] focus:outline-none focus:ring-2 focus:ring-[#70BCD2]/40"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-[#007AB7] focus:outline-none focus:ring-2 focus:ring-[#13C5E2]/40"
                 autoComplete="username"
               />
               <input
@@ -546,7 +581,7 @@ function App() {
                 value={adminPassword}
                 onChange={(event) => setAdminPassword(event.target.value)}
                 placeholder="Password"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-[#1F67A5] focus:outline-none focus:ring-2 focus:ring-[#70BCD2]/40"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-[#007AB7] focus:outline-none focus:ring-2 focus:ring-[#13C5E2]/40"
                 autoComplete="current-password"
               />
               <button
@@ -575,32 +610,13 @@ function App() {
 
   if (!user) {
     return (
-      <main className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-[#0A4A6A] px-4 py-8">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute inset-0 bg-[linear-gradient(140deg,#0A4A6A_0%,#1F67A5_50%,#70BCD2_100%)]" />
-          <div className="absolute -left-28 top-0 h-80 w-80 rounded-br-[220px] bg-[#73BED4]/75" />
-          <div className="absolute right-[-140px] top-[-80px] h-[420px] w-[420px] rounded-full border-[80px] border-[#3B79B8]/80" />
-          <div className="absolute bottom-[-180px] left-[-120px] h-[420px] w-[420px] rounded-full bg-[#44B2CC]/75" />
-          <div className="absolute bottom-[-120px] right-[-160px] h-[360px] w-[360px] rounded-full bg-[#3B79B8]/80" />
-        </div>
+      <main className="relative flex min-h-screen w-full items-center justify-center overflow-hidden px-4 py-8">
+        <BrandBackground />
 
-        <section className="relative z-10 w-full max-w-[46rem] overflow-hidden rounded-3xl border border-white/70 bg-white/95 shadow-2xl backdrop-blur-sm">
+        <section className="relative z-10 w-full max-w-[46rem] overflow-hidden rounded-3xl bg-white shadow-2xl">
           <div className="grid md:grid-cols-[285px_1fr]">
-            <aside className="relative min-h-[190px] overflow-hidden bg-[#80AFC7] md:min-h-full">
-              <div className="absolute inset-0">
-                <div className="absolute inset-x-0 top-0 h-[29%] bg-[#6BB4CD]" />
-                <div className="absolute inset-x-0 top-[29%] h-[19%] bg-[#3C79B7]" />
-                <div className="absolute inset-x-0 top-[48%] h-[25%] bg-[#1F66A7]" />
-                <div className="absolute inset-x-0 bottom-0 h-[27%] bg-[#6AB5CF]" />
-                <div className="absolute right-0 top-0 h-[64%] w-[43%] bg-[#0A4A6A]" />
-                <div className="absolute right-[-37%] top-[20%] h-52 w-52 rounded-full bg-[#4B76B1]" />
-                <div className="absolute right-[-66%] top-[31%] h-56 w-56 rounded-full border-[48px] border-[#6CB7D0]" />
-                <div className="absolute left-0 top-[48%] h-[25%] w-full bg-[linear-gradient(140deg,#1F66A7_0%,#1F66A7_50%,#3C79B7_50%,#3C79B7_100%)]" />
-                <div className="absolute bottom-0 left-0 h-[27%] w-full bg-[linear-gradient(140deg,#6AB5CF_0%,#6AB5CF_46%,#3CB3CE_46%,#3CB3CE_68%,#6AB5CF_68%,#6AB5CF_100%)]" />
-                <div className="absolute bottom-0 right-0 h-[27%] w-[56%] bg-[linear-gradient(140deg,#6AB5CF_0%,#6AB5CF_55%,#3B79B8_55%,#3B79B8_100%)]" />
-                <div className="absolute left-[18%] top-[64%] h-14 w-14 rounded-full bg-white/90" />
-                <div className="absolute bottom-[7%] right-[11%] h-16 w-16 rounded-full bg-[#1B66A8]" />
-              </div>
+            <aside className="relative min-h-[190px] overflow-hidden bg-sfNavy md:min-h-full">
+              <BrandBackground contained />
               <div className="absolute bottom-6 left-6 text-white/70">
                 <svg viewBox="0 0 64 64" className="h-8 w-8" aria-hidden="true">
                   <rect x="8" y="8" width="48" height="34" rx="6" fill="none" stroke="currentColor" strokeWidth="4" />
@@ -613,19 +629,19 @@ function App() {
 
             <div className="p-6 sm:p-8 md:p-9">
               <div className="w-full">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#4A76B1]">Workspace Management</p>
-                <h1 className="mt-4 text-3xl font-semibold leading-[1.1] text-[#1F4770] sm:text-4xl">
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#007AB7]">Workspace Management</p>
+                <h1 className="mt-4 text-3xl font-bold leading-[1.1] text-sfNavy sm:text-4xl">
                   Your desk is
-                  <span className="block text-[#4A76B1]">waiting.</span>
+                  <span className="block text-[#007AB7]">waiting.</span>
                 </h1>
-                <p className="mt-5 max-w-[42ch] text-base leading-relaxed text-[#5D708B] sm:text-[1.1rem]">
+                <p className="mt-5 max-w-[42ch] text-base leading-relaxed text-[#4A5568] sm:text-[1.1rem]">
                   Reserve your spot at the Silverfin UK office and
                   <br className="hidden md:block" /> collaborate with your team in person.
                 </p>
 
                 <div className="mt-6 flex flex-wrap gap-2">
-                  <span className="inline-flex items-center gap-2 rounded-full border border-[#d8dee7] bg-[#f2f4f8] px-4 py-2 text-sm font-semibold text-[#40526b]">
-                    <svg viewBox="0 0 24 24" className="h-4 w-4 text-[#4A76B1]" aria-hidden="true">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-[#d8dee7] bg-[#f2f4f8] px-4 py-2 text-sm font-semibold text-[#334155]">
+                    <svg viewBox="0 0 24 24" className="h-4 w-4 text-[#007AB7]" aria-hidden="true">
                       <rect x="3.5" y="5.5" width="17" height="15" rx="2.5" fill="none" stroke="currentColor" strokeWidth="2" />
                       <line x1="3.5" y1="10" x2="20.5" y2="10" stroke="currentColor" strokeWidth="2" />
                       <line x1="8" y1="3.5" x2="8" y2="7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -633,8 +649,8 @@ function App() {
                     </svg>
                     Instant Booking
                   </span>
-                  <span className="inline-flex items-center gap-2 rounded-full border border-[#d8dee7] bg-[#f2f4f8] px-4 py-2 text-sm font-semibold text-[#40526b]">
-                    <svg viewBox="0 0 24 24" className="h-4 w-4 text-[#4A76B1]" aria-hidden="true">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-[#d8dee7] bg-[#f2f4f8] px-4 py-2 text-sm font-semibold text-[#334155]">
+                    <svg viewBox="0 0 24 24" className="h-4 w-4 text-[#007AB7]" aria-hidden="true">
                       <circle cx="9" cy="9" r="3.25" fill="none" stroke="currentColor" strokeWidth="2" />
                       <path d="M3.5 19a5.5 5.5 0 0 1 11 0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                       <circle cx="17.2" cy="10.5" r="2.2" fill="none" stroke="currentColor" strokeWidth="2" />
@@ -666,13 +682,13 @@ function App() {
 
                 {authProviders.devLogin ? (
                   <form className="mt-6 space-y-3" onSubmit={handleDevLogin}>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-[#3C6283]">Quick local access</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[#04588C]">Quick local access</p>
                     <input
                       type="text"
                       placeholder="Your name"
                       value={devUsername}
                       onChange={(event) => setDevUsername(event.target.value)}
-                      className="w-full rounded-lg border border-[#9FCFDD] bg-white px-3 py-2 text-sm text-[#0D2440] placeholder:text-[#4C6A85] focus:border-[#1F67A5] focus:outline-none focus:ring-2 focus:ring-[#70BCD2]/40"
+                      className="w-full rounded-lg border border-[#C5D7E2] bg-white px-3 py-2 text-sm text-sfNavy placeholder:text-[#5B6475] focus:border-[#007AB7] focus:outline-none focus:ring-2 focus:ring-[#13C5E2]/40"
                       maxLength={80}
                     />
                     <input
@@ -680,11 +696,11 @@ function App() {
                       placeholder="you@example.com"
                       value={devEmail}
                       onChange={(event) => setDevEmail(event.target.value)}
-                      className="w-full rounded-lg border border-[#9FCFDD] bg-white px-3 py-2 text-sm text-[#0D2440] placeholder:text-[#4C6A85] focus:border-[#1F67A5] focus:outline-none focus:ring-2 focus:ring-[#70BCD2]/40"
+                      className="w-full rounded-lg border border-[#C5D7E2] bg-white px-3 py-2 text-sm text-sfNavy placeholder:text-[#5B6475] focus:border-[#007AB7] focus:outline-none focus:ring-2 focus:ring-[#13C5E2]/40"
                     />
                     <button
                       type="submit"
-                      className="w-full rounded-lg bg-[#1F67A5] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0A4A6A] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="w-full rounded-lg bg-[#04588C] px-5 py-3 text-sm font-semibold text-white transition hover:bg-sfNavy disabled:cursor-not-allowed disabled:opacity-60"
                       disabled={isDevLoggingIn}
                     >
                       {isDevLoggingIn ? 'Signing in...' : 'Continue with Dev Login'}
@@ -693,7 +709,7 @@ function App() {
                 ) : null}
 
                 {showAuthProviderDebug ? (
-                  <p className="mt-4 rounded-lg bg-[#E8F5FA] px-3 py-2 text-xs font-medium text-[#3C6283]">
+                  <p className="mt-4 rounded-lg bg-[#E8F8FC] px-3 py-2 text-xs font-medium text-[#04588C]">
                     Auth providers: dev={String(authProviders.devLogin)}, slack={String(authProviders.slack)}, google=
                     {String(authProviders.google)}, admin={String(authProviders.admin)}
                   </p>
@@ -706,168 +722,145 @@ function App() {
     );
   }
 
+  const changeView = (view) => {
+    clearNotices();
+    setSelectedDeskId(null);
+    setActiveView(view);
+  };
+
+  const shortDateLabel = formatShortDate(selectedDate);
+  const deskStatusLine = user.isAdmin
+    ? `${bookingCountToday} of ${DESKS.length} desks booked`
+    : myBookingForSelectedDate
+      ? `You're at ${myBookingForSelectedDate.deskId} · ${getDeskZone(myBookingForSelectedDate.deskId)}`
+      : `No desk yet · ${freeDeskCount} free`;
+
+  const deskDetailsProps = {
+    deskId: selectedDeskId,
+    booking: selectedBooking,
+    status: selectedStatus,
+    dateLabel: shortDateLabel,
+    isAdmin: Boolean(user.isAdmin),
+    myBooking: myBookingForSelectedDate,
+    bookingFor,
+    onBookingForChange: setBookingFor,
+    isSubmitting,
+    onBook: handleBookSelectedDesk,
+    onRemove: () => handleRemoveDeskBooking(selectedDeskId),
+    onClose: closeDeskDetails
+  };
+
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#3B79B8]">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-[#3B79B8]" />
-        <div className="absolute left-0 top-0 h-[32%] w-[44%] bg-[#6BB4CD]" />
-        <div className="absolute left-0 top-[32%] h-[18%] w-[44%] bg-[#3C79B7]" />
-        <div className="absolute left-0 top-[50%] h-[24%] w-[44%] bg-[#1F66A7]" />
-        <div className="absolute left-0 bottom-0 h-[26%] w-full bg-[#6AB5CF]" />
-        <div className="absolute right-0 top-0 h-[52%] w-[52%] bg-[#0A4A6A]/70" />
-        <div className="absolute right-[-10%] top-[10%] h-[48vh] w-[48vh] rounded-full bg-[#4B76B1]/90" />
-        <div className="absolute right-[-25%] top-[18%] h-[56vh] w-[56vh] rounded-full border-[8vh] border-[#6CB7D0]/90" />
-        <div className="absolute left-0 top-[50%] h-[24%] w-full bg-[linear-gradient(140deg,#1F66A7_0%,#1F66A7_46%,#3C79B7_46%,#3C79B7_100%)]" />
-        <div className="absolute left-0 bottom-0 h-[26%] w-full bg-[linear-gradient(140deg,#6AB5CF_0%,#6AB5CF_50%,#3CB3CE_50%,#3CB3CE_74%,#6AB5CF_74%,#6AB5CF_100%)]" />
-        <div className="absolute right-0 bottom-0 h-[26%] w-[54%] bg-[linear-gradient(140deg,#6AB5CF_0%,#6AB5CF_56%,#3B79B8_56%,#3B79B8_100%)]" />
-        <div className="absolute left-[8%] top-[61%] h-20 w-20 rounded-full bg-white/90" />
-        <div className="absolute bottom-[10%] right-[12%] h-24 w-24 rounded-full bg-[#1B66A8]/95" />
-      </div>
+    <div className="min-h-screen text-[#0D0E20]">
+      <BrandBackground />
+      <AppHeader user={user} activeView={activeView} onChangeView={changeView} onLogout={handleLogout} />
 
-      <div className="relative z-10 mx-auto w-full max-w-7xl px-4 py-6 md:px-6 lg:px-8">
-      <header className="rounded-2xl border border-slate-200 bg-white p-4 shadow-lg md:p-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">Desk Booking Dashboard</h1>
-            <p className="text-sm text-slate-600">
-              Signed in as <span className="font-semibold">{user.username}</span> ({user.email})
-            </p>
-          </div>
-          <button
-            type="button"
-            className="w-full rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 md:w-auto"
-            onClick={handleLogout}
-          >
-            Logout
-          </button>
-        </div>
-      </header>
-
-      <section className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-lg md:p-5">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="grid w-full grid-cols-3 rounded-xl bg-[#eaeef1] p-1 md:inline-flex md:w-auto">
-            <button
-              type="button"
-              className={`min-w-0 rounded-lg px-2 py-2 text-center text-[13px] font-semibold leading-tight transition sm:px-4 sm:text-sm ${
-                activeView === 'calendar'
-                  ? 'bg-white text-[#0D0E20] shadow'
-                  : 'text-slate-600 hover:text-[#0D0E20]'
-              }`}
-              onClick={() => setActiveView('calendar')}
-            >
-              <span className="sm:hidden">Calendar</span>
-              <span className="hidden sm:inline">Calendar View</span>
-            </button>
-            <button
-              type="button"
-              className={`min-w-0 rounded-lg px-2 py-2 text-center text-[13px] font-semibold leading-tight transition sm:px-4 sm:text-sm ${
-                activeView === 'desk' ? 'bg-white text-[#0D0E20] shadow' : 'text-slate-600 hover:text-[#0D0E20]'
-              }`}
-              onClick={() => setActiveView('desk')}
-            >
-              <span className="sm:hidden">Desk</span>
-              <span className="hidden sm:inline">Desk View</span>
-            </button>
-            <button
-              type="button"
-              className={`min-w-0 rounded-lg px-2 py-2 text-center text-[13px] font-semibold leading-tight transition sm:px-4 sm:text-sm ${
-                activeView === 'myBookings'
-                  ? 'bg-white text-[#0D0E20] shadow'
-                  : 'text-slate-600 hover:text-[#0D0E20]'
-              }`}
-              onClick={() => setActiveView('myBookings')}
-            >
-              <span className="sm:hidden">Bookings</span>
-              <span className="hidden sm:inline">{user?.isAdmin ? 'All Bookings' : 'My Bookings'}</span>
-            </button>
-          </div>
-
-          {activeView === 'desk' ? (
-            <div className="flex flex-wrap items-center gap-3 text-sm text-slate-700">
-              <label className="font-semibold" htmlFor="booking-date">
-                Date
-              </label>
-              {showDateStepper ? (
-                <button
-                  type="button"
-                  aria-label="Previous day"
-                  disabled={!canGoPreviousDate}
-                  className="rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                  onClick={() => handleQuickDateShift(-1)}
+      <main className="mx-auto flex max-w-[1360px] flex-col gap-5 px-4 pb-32 pt-5 md:px-8 md:pb-10 md:pt-7">
+        {activeView === 'desk' ? (
+          <>
+            <section aria-label="Choose a day" className="flex flex-wrap items-end justify-between gap-4 md:gap-5">
+              <div className="min-w-0">
+                <p className="mb-1 hidden text-[13px] font-semibold uppercase tracking-[0.08em] text-[#9CC3D6] md:block">
+                  Week of {formatLongDate(getWorkWeek(selectedDate)[0]).split(' ').slice(1).join(' ')}
+                </p>
+                <h1 className="font-heading text-[25px] font-bold leading-tight text-white md:text-[34px]">
+                  {formatLongDate(selectedDate)}
+                </h1>
+                <p
+                  className={`mt-1 flex items-center gap-1.5 text-sm font-semibold md:text-[15px] ${
+                    myBookingForSelectedDate && !user.isAdmin ? 'text-sfIce' : 'text-[#C9DCE6]'
+                  }`}
                 >
-                  ←
-                </button>
-              ) : null}
-              <input
-                id="booking-date"
-                type="date"
-                value={selectedDate}
-                min={TODAY}
-                max={MAX_DATE}
-                className="rounded-lg border border-slate-300 px-3 py-2"
-                onChange={handleDateChange}
+                  <span aria-hidden="true" className="h-2 w-2 rounded-full bg-current" />
+                  {deskStatusLine}
+                  {!user.isAdmin && myBookingForSelectedDate ? (
+                    <span className="hidden font-normal text-[#9CC3D6] md:inline">
+                      · {bookingCountToday} of {DESKS.length} booked, {freeDeskCount} free
+                    </span>
+                  ) : null}
+                </p>
+              </div>
+              <WeekStrip
+                days={weekDays}
+                selectedDate={selectedDate}
+                onSelectDate={goToDate}
+                onPreviousWeek={() => goToDate(previousWeekDate)}
+                onNextWeek={() => goToDate(nextWeekDate)}
+                canGoPreviousWeek={Boolean(previousWeekDate)}
+                canGoNextWeek={Boolean(nextWeekDate)}
+                totalDesks={DESKS.length}
               />
-              {showDateStepper ? (
-                <button
-                  type="button"
-                  aria-label="Next day"
-                  disabled={!canGoNextDate}
-                  className="rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
-                  onClick={() => handleQuickDateShift(1)}
-                >
-                  →
-                </button>
-              ) : null}
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-                {bookingCountToday}/{DESKS.length} desks booked
-              </span>
-            </div>
-          ) : null}
-        </div>
-      </section>
+            </section>
 
-      {error && <p className="mt-4 rounded-lg bg-red-100 px-3 py-2 text-sm text-red-700">{error}</p>}
-      {success && <p className="mt-4 rounded-lg bg-emerald-100 px-3 py-2 text-sm text-emerald-700">{success}</p>}
+            <div className="flex flex-wrap items-start gap-5">
+              <section
+                aria-label="Office floor plan"
+                className="min-w-0 flex-[999_1_640px] md:rounded-[20px] md:bg-white md:px-6 md:pb-6 md:pt-5 md:shadow-[0_12px_40px_rgba(0,20,35,0.35)]"
+              >
+                <div className="hidden flex-wrap items-center justify-between gap-3 md:flex">
+                  <div className="flex flex-wrap items-center gap-[18px] text-sm font-medium text-[#334155]">
+                    <LegendItem look={DESK_LOOK.free} label="Free" />
+                    <LegendItem look={DESK_LOOK.booked} label="Booked" />
+                    <LegendItem look={DESK_LOOK.mine} label="Your desk" />
+                  </div>
+                  <p className="text-sm text-[#5B6475]">Select a desk to see who's there or book it</p>
+                </div>
+                <div className="md:mt-[18px]">
+                  <FloorPlan
+                    bookings={bookings}
+                    currentUser={user}
+                    selectedDeskId={selectedDeskId}
+                    onSelectDesk={handleSelectDesk}
+                  />
+                </div>
+              </section>
 
-      {activeView === 'desk' ? (
-        <section className="mt-4 space-y-4">
-          <div className="flex flex-wrap items-center gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-            <div className="inline-flex items-center gap-2 text-sm text-slate-700">
-              <span className="h-3 w-3 rounded-full bg-available" /> Available
+              <aside aria-label="Booking details" className="flex min-w-0 flex-[1_1_320px] flex-col gap-4">
+                {selectedDeskId ? (
+                  <section className={`${CARD} hidden p-[22px] md:block`}>
+                    <DeskDetails {...deskDetailsProps} />
+                  </section>
+                ) : (
+                  <div className="hidden md:block">
+                    <YourDeskCard
+                      isAdmin={Boolean(user.isAdmin)}
+                      myBooking={myBookingForSelectedDate}
+                      dateLabel={shortDateLabel}
+                      freeCount={freeDeskCount}
+                      isSubmitting={isSubmitting}
+                      onShowOnPlan={() => setSelectedDeskId(myBookingForSelectedDate?.deskId ?? null)}
+                      onCancel={() => handleRemoveDeskBooking(myBookingForSelectedDate?.deskId)}
+                    />
+                  </div>
+                )}
+                <InOfficeList people={peopleInOffice} onSelect={handleSelectDesk} />
+              </aside>
             </div>
-            <div className="inline-flex items-center gap-2 text-sm text-slate-700">
-              <span className="h-3 w-3 rounded-full bg-booked" /> Booked
-            </div>
-            <div className="text-xs text-slate-500">
-              Click a green desk to book. Click a red desk to remove the booking.
-            </div>
-          </div>
 
-          <FloorPlan
-            bookings={bookings}
-            onAvailableDeskClick={handleAvailableDeskClick}
-            onBookedDeskClick={handleBookedDeskClick}
-          />
-        </section>
-      ) : activeView === 'calendar' ? (
-        <section className="mt-4">
-          <MonthlyCalendar
-            month={calendarMonth}
-            dayCounts={dayCounts}
-            totalDesks={DESKS.length}
-            onMonthChange={setCalendarMonth}
-            onDateSelect={handleCalendarDateSelect}
-            minDate={TODAY}
-            maxDate={MAX_DATE}
-            minMonth={CURRENT_MONTH}
-            maxMonth={MAX_CALENDAR_MONTH}
-            selectedDate={selectedDate}
-          />
-        </section>
-      ) : (
-        <section className="mt-4">
+            <BottomSheet open={Boolean(selectedDeskId)} onClose={closeDeskDetails} label={`Desk ${selectedDeskId ?? ''} details`}>
+              <DeskDetails {...deskDetailsProps} inSheet />
+            </BottomSheet>
+          </>
+        ) : activeView === 'calendar' ? (
+          <section>
+            <h1 className="mb-4 font-heading text-[28px] font-bold text-white md:text-[34px]">Calendar</h1>
+            <MonthlyCalendar
+              month={calendarMonth}
+              dayCounts={dayCounts}
+              totalDesks={DESKS.length}
+              onMonthChange={setCalendarMonth}
+              onDateSelect={handleCalendarDateSelect}
+              minDate={TODAY}
+              maxDate={MAX_DATE}
+              minMonth={CURRENT_MONTH}
+              maxMonth={MAX_CALENDAR_MONTH}
+              selectedDate={selectedDate}
+            />
+          </section>
+        ) : (
           <MyBookings
             bookings={myBookings}
+            currentUser={user}
             deskNameById={deskNameById}
             isLoading={isMyBookingsLoading}
             onOpenBooking={handleOpenMyBooking}
@@ -875,26 +868,37 @@ function App() {
             isAdmin={Boolean(user?.isAdmin)}
             onExportCsv={handleExportBookingsCsv}
           />
-        </section>
-      )}
+        )}
+      </main>
 
-      <BookingModal
-        desk={pendingAction?.desk ?? null}
-        date={selectedDate}
-        mode={pendingAction?.type ?? null}
-        bookedBy={pendingAction?.booking?.username ?? ''}
-        onCancel={() => {
-          setPendingAction(null);
-          setBookingFor('');
-        }}
-        onConfirm={handleConfirmDeskAction}
-        isSubmitting={isSubmitting}
-        isAdmin={Boolean(user?.isAdmin)}
-        bookingFor={bookingFor}
-        onBookingForChange={setBookingFor}
-      />
-      </div>
-    </main>
+      <MobileTabBar isAdmin={Boolean(user.isAdmin)} activeView={activeView} onChangeView={changeView} />
+
+      {error || success ? (
+        <div
+          role={error ? 'alert' : 'status'}
+          className={`fixed inset-x-4 bottom-[100px] z-50 mx-auto flex max-w-md items-center gap-2.5 rounded-[14px] px-4 py-3.5 text-[15px] font-semibold shadow-[0_8px_24px_rgba(13,14,32,0.25)] md:bottom-6 md:left-auto md:right-6 md:mx-0 ${
+            error ? 'bg-[#FEF3F2] text-[#B42318] ring-1 ring-[#E8B4AE]' : 'bg-white text-sfNavy'
+          }`}
+        >
+          {error ? null : (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#007AB7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M20 6L9 17l-5-5" />
+            </svg>
+          )}
+          <span className="flex-1">{error || success}</span>
+          <button
+            type="button"
+            aria-label="Dismiss message"
+            onClick={clearNotices}
+            className={`flex h-8 w-8 flex-none items-center justify-center rounded-lg ${error ? 'hover:bg-[#FDE2DF]' : 'hover:bg-[#EAEEF1]'}`}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+        </div>
+      ) : null}
+    </div>
   );
 }
 

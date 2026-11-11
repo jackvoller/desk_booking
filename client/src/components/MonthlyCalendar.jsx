@@ -49,26 +49,26 @@ function getAvailabilityBadgeClass(bookedCount, totalDesks) {
   const occupancyRatio = bookedCount / totalDesks;
 
   if (occupancyRatio >= 1) {
-    return 'bg-red-100 text-red-700';
+    return 'bg-sfNavy text-white';
   }
 
   if (occupancyRatio >= 0.8) {
-    return 'bg-orange-100 text-orange-700';
+    return 'bg-[#04588C] text-white';
   }
 
   if (occupancyRatio >= 0.6) {
-    return 'bg-amber-100 text-amber-700';
+    return 'bg-[#007AB7] text-white';
   }
 
   if (occupancyRatio >= 0.4) {
-    return 'bg-yellow-100 text-yellow-700';
+    return 'bg-[#BDEEF7] text-sfNavy';
   }
 
   if (occupancyRatio >= 0.2) {
-    return 'bg-lime-100 text-lime-700';
+    return 'bg-[#D6F4FA] text-sfNavy';
   }
 
-  return 'bg-emerald-100 text-emerald-700';
+  return 'bg-[#E8F8FC] text-[#036483]';
 }
 
 function getPeopleSymbolCount(bookedCount, totalDesks) {
@@ -218,9 +218,9 @@ function MonthlyCalendar({
     const baseClass =
       'relative h-20 overflow-hidden rounded-lg border p-1.5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 sm:h-24 sm:rounded-xl sm:p-2';
     const weekendClass = 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400';
-    const bookedDayClass = 'border-emerald-300 bg-emerald-50/70 hover:border-emerald-400 hover:bg-emerald-100/70';
-    const openDayClass = 'border-slate-200 bg-slate-50 hover:border-[#13c5e2] hover:bg-[#e8f8fc]';
-    const selectedClass = isSelectedDate ? 'ring-2 ring-[#13c5e2] ring-offset-0' : '';
+    const bookedDayClass = 'border-[#9FE3F0] bg-[#F2FBFD] hover:border-sfIce hover:bg-[#E8F8FC]';
+    const openDayClass = 'border-slate-200 bg-slate-50 hover:border-[#007AB7] hover:bg-[#E6F0F7]';
+    const selectedClass = isSelectedDate ? 'ring-2 ring-[#007AB7] ring-offset-0' : '';
 
     return (
       <button
@@ -239,14 +239,14 @@ function MonthlyCalendar({
             {cell.dayNumber}
           </div>
           {hasBookings && !isDisabledDate ? (
-            <div className="hidden items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-emerald-700 sm:inline-flex">
+            <div className="hidden items-center gap-1 rounded-full bg-[#E8F8FC] px-2 py-1 text-[#036483] sm:inline-flex">
               {Array.from({ length: peopleSymbolCount }, (_item, index) => (
                 <PeopleSymbol key={index} index={index} />
               ))}
             </div>
           ) : null}
           {hasBookings && !isDisabledDate ? (
-            <span className="mt-1 h-2.5 w-2.5 rounded-full bg-emerald-500 sm:hidden" aria-hidden="true" />
+            <span className="mt-1 h-2.5 w-2.5 rounded-full bg-sfIce sm:hidden" aria-hidden="true" />
           ) : null}
         </div>
         {isDisabledDate ? (
@@ -285,9 +285,9 @@ function MonthlyCalendar({
     const rowClass =
       'w-full rounded-xl border p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300';
     const disabledClass = 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400';
-    const bookedClass = 'border-emerald-300 bg-emerald-50/70 hover:border-emerald-400 hover:bg-emerald-100/70';
-    const openClass = 'border-slate-200 bg-slate-50 hover:border-[#13c5e2] hover:bg-[#e8f8fc]';
-    const selectedClass = isSelectedDate ? 'ring-2 ring-[#13c5e2] ring-offset-0' : '';
+    const bookedClass = 'border-[#9FE3F0] bg-[#F2FBFD] hover:border-sfIce hover:bg-[#E8F8FC]';
+    const openClass = 'border-slate-200 bg-slate-50 hover:border-[#007AB7] hover:bg-[#E6F0F7]';
+    const selectedClass = isSelectedDate ? 'ring-2 ring-[#007AB7] ring-offset-0' : '';
 
     return (
       <button
@@ -307,7 +307,7 @@ function MonthlyCalendar({
             <p className={`text-sm font-semibold ${isDisabledDate ? 'text-slate-500' : 'text-slate-900'}`}>{dayLabel}</p>
           </div>
           {hasBookings && !isDisabledDate ? (
-            <div className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-emerald-700">
+            <div className="inline-flex items-center gap-1 rounded-full bg-[#E8F8FC] px-2 py-1 text-[#036483]">
               {Array.from({ length: peopleSymbolCount }, (_item, index) => (
                 <PeopleSymbol key={index} index={index} />
               ))}
@@ -334,21 +334,21 @@ function MonthlyCalendar({
   };
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-lg sm:p-4 md:p-6">
+    <div className="rounded-[20px] border border-[#DDE3EA] bg-white p-3 sm:p-4 md:p-6">
       <div className="mb-3 flex items-center justify-between gap-2 sm:mb-4">
         <button
           type="button"
-          className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:border-[#13c5e2] hover:bg-[#e8f8fc] disabled:cursor-not-allowed disabled:opacity-45 sm:px-3 sm:text-sm"
+          className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:border-[#007AB7] hover:bg-[#E6F0F7] disabled:cursor-not-allowed disabled:opacity-45 sm:px-3 sm:text-sm"
           onClick={() => onMonthChange(previousMonth)}
           disabled={!canGoPreviousMonth}
         >
           <span className="sm:hidden">←</span>
           <span className="hidden sm:inline">Previous</span>
         </button>
-        <h2 className="px-1 text-base font-bold text-slate-900 sm:text-lg">{getMonthLabel(month)}</h2>
+        <h2 className="px-1 font-heading text-lg font-semibold text-[#0D0E20] sm:text-xl">{getMonthLabel(month)}</h2>
         <button
           type="button"
-          className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:border-[#13c5e2] hover:bg-[#e8f8fc] disabled:cursor-not-allowed disabled:opacity-45 sm:px-3 sm:text-sm"
+          className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:border-[#007AB7] hover:bg-[#E6F0F7] disabled:cursor-not-allowed disabled:opacity-45 sm:px-3 sm:text-sm"
           onClick={() => onMonthChange(nextMonth)}
           disabled={!canGoNextMonth}
         >
@@ -360,7 +360,7 @@ function MonthlyCalendar({
       <div className="mb-2 flex items-center justify-between gap-2 sm:hidden">
         <button
           type="button"
-          className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:border-[#13c5e2] hover:bg-[#e8f8fc] disabled:cursor-not-allowed disabled:opacity-45"
+          className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:border-[#007AB7] hover:bg-[#E6F0F7] disabled:cursor-not-allowed disabled:opacity-45"
           onClick={() => setMobileWeekIndex((current) => Math.max(0, current - 1))}
           disabled={!canGoPreviousWeek}
         >
@@ -371,7 +371,7 @@ function MonthlyCalendar({
         </p>
         <button
           type="button"
-          className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:border-[#13c5e2] hover:bg-[#e8f8fc] disabled:cursor-not-allowed disabled:opacity-45"
+          className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:border-[#007AB7] hover:bg-[#E6F0F7] disabled:cursor-not-allowed disabled:opacity-45"
           onClick={() => setMobileWeekIndex((current) => Math.min(mobileWeeks.length - 1, current + 1))}
           disabled={!canGoNextWeek}
         >
