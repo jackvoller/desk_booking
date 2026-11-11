@@ -36,7 +36,7 @@ function TodayCard({ booking, onOpenBooking }) {
   );
 }
 
-function BookingRow({ booking, isAdmin, isPast, onOpenBooking, onDeleteBooking }) {
+function BookingRow({ booking, currentUser, isAdmin, isPast, onOpenBooking, onDeleteBooking }) {
   const parts = getDateParts(booking.date);
   return (
     <article className={`${CARD} flex items-center gap-3.5 rounded-[18px] p-3.5`}>
@@ -54,7 +54,11 @@ function BookingRow({ booking, isAdmin, isPast, onOpenBooking, onDeleteBooking }
       >
         <p className="text-[17px] font-bold">Desk {booking.deskId}</p>
         <p className="mt-0.5 truncate text-sm text-[#4A5568]">
-          {isAdmin ? booking.username ?? '—' : getDeskZone(booking.deskId)}
+          {isAdmin
+            ? booking.username ?? '—'
+            : isOwnBooking(booking, currentUser)
+              ? getDeskZone(booking.deskId)
+              : `For ${booking.username ?? 'someone else'}`}
         </p>
         {isAdmin && booking.email ? <p className="truncate text-xs text-[#5B6475]">{booking.email}</p> : null}
       </button>
@@ -126,6 +130,7 @@ function MyBookings({ bookings, currentUser, isLoading, onOpenBooking, onDeleteB
             <BookingRow
               key={bookingKey(booking)}
               booking={booking}
+              currentUser={currentUser}
               isAdmin={isAdmin}
               onOpenBooking={onOpenBooking}
               onDeleteBooking={onDeleteBooking}
@@ -148,6 +153,7 @@ function MyBookings({ bookings, currentUser, isLoading, onOpenBooking, onDeleteB
               <BookingRow
                 key={bookingKey(booking)}
                 booking={booking}
+                currentUser={currentUser}
                 isAdmin={isAdmin}
                 isPast
                 onOpenBooking={onOpenBooking}

@@ -27,6 +27,12 @@ const bookingSchema = new mongoose.Schema(
       type: String,
       required: true,
       match: /^\d{4}-\d{2}-\d{2}$/
+    },
+    // True when booked under someone else's name (an admin or delegate
+    // blocking a desk for a visitor), so it doesn't count as the booker's own desk.
+    isGuest: {
+      type: Boolean,
+      default: false
     }
   },
   {

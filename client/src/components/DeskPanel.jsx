@@ -141,6 +141,8 @@ export function DeskDetails({
   status,
   dateLabel,
   isAdmin,
+  canBookForOthers = false,
+  canRemove = false,
   myBooking,
   bookingFor,
   onBookingForChange,
@@ -153,7 +155,8 @@ export function DeskDetails({
   const look = DESK_LOOK[status];
   const zone = getDeskZone(deskId);
   const guestName = bookingFor.trim();
-  const isMove = !isAdmin && status === 'free' && myBooking && myBooking.deskId !== deskId;
+  const forSomeoneElse = canBookForOthers && Boolean(guestName);
+  const isMove = !isAdmin && !forSomeoneElse && status === 'free' && myBooking && myBooking.deskId !== deskId;
 
   return (
     <div className="flex flex-col gap-4">
@@ -194,7 +197,7 @@ export function DeskDetails({
       ) : null}
 
       <div className="flex flex-col gap-2">
-        {status === 'free' && isAdmin ? (
+        {status === 'free' && canBookForOthers ? (
           <div className="mb-1">
             <label htmlFor={`booking-for-${inSheet ? 'sheet' : 'panel'}`} className="block text-sm font-semibold text-[#334155]">
               Booking for (optional)
@@ -209,7 +212,9 @@ export function DeskDetails({
               disabled={isSubmitting}
               className="mt-1 h-11 w-full rounded-xl border border-[#D5DDE5] px-3 text-base text-[#0D0E20] placeholder:text-[#8792A2] focus:border-[#007AB7] focus:outline-none focus:ring-2 focus:ring-[#007AB7]/25"
             />
-            <p className="mt-1 text-[13px] text-[#5B6475]">Leave blank to book under your own name.</p>
+            <p className="mt-1 text-[13px] text-[#5B6475]">
+              {isAdmin ? 'Leave blank to book under your own name.' : 'Add a name to block this desk for someone else, or leave blank to book it for yourself.'}
+            </p>
           </div>
         ) : null}
 
@@ -217,12 +222,12 @@ export function DeskDetails({
           <button type="button" className={PRIMARY_BUTTON} onClick={onBook} disabled={isSubmitting}>
             {isSubmitting
               ? 'Saving…'
-              : isMove
-                ? inSheet
-                  ? `Move here from ${myBooking.deskId}`
-                  : 'Move my booking here'
-                : isAdmin && guestName
-                  ? `Book for ${guestName}`
+              : forSomeoneElse
+                ? `Book for ${guestName}`
+                : isMove
+                  ? inSheet
+                    ? `Move here from ${myBooking.deskId}`
+                    : 'Move my booking here'
                   : `Book desk ${deskId}`}
           </button>
         ) : null}
@@ -235,9 +240,9 @@ export function DeskDetails({
             {isSubmitting ? 'Saving…' : 'Cancel my booking'}
           </button>
         ) : null}
-        {status === 'booked' && isAdmin ? (
+        {status === 'booked' && canRemove ? (
           <button type="button" className={DANGER_BUTTON} onClick={onRemove} disabled={isSubmitting}>
-            {isSubmitting ? 'Saving…' : 'Remove this booking'}
+            {isSubmitting ? 'Saving…' : isAdmin ? 'Remove this booking' : `Cancel booking for ${booking?.username ?? 'them'}`}
           </button>
         ) : null}
 

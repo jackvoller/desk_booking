@@ -31,12 +31,28 @@ function ListIcon({ size = 16 }) {
   );
 }
 
+function PeopleIcon({ size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="9" cy="8" r="3.5" />
+      <path d="M2.5 20a6.5 6.5 0 0 1 13 0" />
+      <path d="M16 4.5a3.5 3.5 0 0 1 0 7M18.5 20a6.5 6.5 0 0 0-3-5.5" />
+    </svg>
+  );
+}
+
 function getTabs(isAdmin) {
-  return [
+  const tabs = [
     { id: 'desk', label: 'Floor plan', Icon: PlanIcon },
     { id: 'calendar', label: 'Calendar', Icon: CalendarIcon },
     { id: 'myBookings', label: isAdmin ? 'All bookings' : 'My bookings', Icon: ListIcon }
   ];
+
+  if (isAdmin) {
+    tabs.push({ id: 'access', label: 'Access', Icon: PeopleIcon });
+  }
+
+  return tabs;
 }
 
 function MenuIcon({ open }) {

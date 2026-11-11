@@ -2,14 +2,11 @@ import { Router } from 'express';
 import Booking from '../models/Booking.js';
 import { requireAuth } from '../middleware/auth.js';
 import { DESK_IDS, DESK_ID_SET } from '../config/desks.js';
+import { canBookForOthers, isAdminUser } from '../services/permissions.js';
 
 const router = Router();
 const MAX_ADVANCE_DAYS = 30;
 const MAX_GUEST_NAME_LENGTH = 60;
-
-function isAdminUser(user) {
-  return Boolean(user?.isAdmin);
-}
 
 function parseDateOnly(dateString) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
@@ -83,7 +80,7 @@ router.get('/', async (req, res, next) => {
     const bookings = await Booking.find({ date })
       .where('deskId')
       .in(DESK_IDS)
-      .select('deskId userId username email date')
+      .select('deskId userId username email date isGuest')
       .sort({ deskId: 1 })
       .lean();
 
@@ -157,7 +154,7 @@ router.get('/mine', async (req, res, next) => {
     })
       .where('deskId')
       .in(DESK_IDS)
-      .select('deskId userId username email date')
+      .select('deskId userId username email date isGuest')
       .sort({ date: 1, deskId: 1 })
       .lean();
 
@@ -178,7 +175,7 @@ router.get('/all', async (req, res, next) => {
     const bookings = await Booking.find({})
       .where('deskId')
       .in(DESK_IDS)
-      .select('deskId userId username email date createdAt updatedAt')
+      .select('deskId userId username email date isGuest createdAt updatedAt')
       .sort({ date: 1, deskId: 1 })
       .lean();
 
@@ -206,9 +203,9 @@ router.post('/', async (req, res, next) => {
 
     let guestName = '';
     if (bookingFor !== undefined && bookingFor !== null && bookingFor !== '') {
-      if (!isAdminUser(req.user)) {
+      if (!(await canBookForOthers(req.user))) {
         return res.status(403).json({
-          message: 'Only admins can book a desk for someone else.'
+          message: 'You do not have permission to book a desk for someone else.'
         });
       }
 
@@ -242,10 +239,13 @@ router.post('/', async (req, res, next) => {
       });
     }
 
-    if (!isAdminUser(req.user)) {
+    // One desk per day for your own bookings. Desks blocked for someone else
+    // don't count towards it.
+    if (!isAdminUser(req.user) && !guestName) {
       const existingUserBooking = await Booking.findOne({
         userId: req.user.id,
-        date
+        date,
+        isGuest: { $ne: true }
       })
         .select('deskId')
         .lean();
@@ -268,7 +268,8 @@ router.post('/', async (req, res, next) => {
       date,
       userId: req.user.id,
       username: guestName || req.user.username,
-      email: req.user.email
+      email: req.user.email,
+      isGuest: Boolean(guestName)
     });
 
     return res.status(201).json({
@@ -278,7 +279,8 @@ router.post('/', async (req, res, next) => {
         date: booking.date,
         userId: booking.userId,
         username: booking.username,
-        email: booking.email
+        email: booking.email,
+        isGuest: booking.isGuest
       }
     });
   } catch (error) {

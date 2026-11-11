@@ -1,12 +1,13 @@
 // A booking belongs to the signed-in person when it is under their account and
 // their own name. Admin bookings made for someone else share the admin's userId
-// but carry the guest's name, so they count as someone else's desk.
+// but carry the guest's name (and newer ones are flagged isGuest), so they count
+// as someone else's desk.
 export function isOwnBooking(booking, user) {
   if (!booking || !user?.id) {
     return false;
   }
 
-  return booking.userId === user.id && (booking.username ?? '') === (user.username ?? '');
+  return !booking.isGuest && booking.userId === user.id && (booking.username ?? '') === (user.username ?? '');
 }
 
 export function getInitials(name) {

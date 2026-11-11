@@ -10,6 +10,7 @@ import { fileURLToPath } from 'url';
 import { configurePassport } from './config/passport.js';
 import authRoutes from './routes/auth.js';
 import bookingRoutes from './routes/bookings.js';
+import adminRoutes from './routes/admin.js';
 
 try {
   await import('dotenv/config');
@@ -158,6 +159,7 @@ app.get('/health', (_req, res) => {
 
 app.use('/auth', authRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/admin', adminRoutes);
 
 if (process.env.NODE_ENV === 'production') {
   if (CLIENT_DIST_PATH) {

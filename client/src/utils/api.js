@@ -68,5 +68,17 @@ export const api = {
   },
   getMonthlyCounts(month) {
     return request(`/api/bookings/month?month=${month}`);
+  },
+  getDelegates() {
+    return request('/api/admin/delegates');
+  },
+  addDelegate(email, name = '') {
+    return request('/api/admin/delegates', {
+      method: 'POST',
+      body: JSON.stringify({ email, name })
+    });
+  },
+  removeDelegate(id) {
+    return request(`/api/admin/delegates/${encodeURIComponent(id)}`, { method: 'DELETE' });
   }
 };
