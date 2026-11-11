@@ -8,19 +8,21 @@
   --sf-ice: #13c5e2;
   --sf-smoke: #eaeef1;
   --sf-pepper: #0d0e20;
+  --sf-navy: #012e44;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: 'Proxima Nova', 'Avenir Next', 'Segoe UI', Arial, sans-serif;
-  background: linear-gradient(180deg, #f8fafc 0%, var(--sf-smoke) 100%);
+  font-family: 'Figtree', 'Segoe UI', Arial, sans-serif;
+  background: var(--sf-navy);
+  -webkit-tap-highlight-color: transparent;
   color: var(--sf-pepper);
 }
 
 h1,
 h2,
 h3 {
-  font-family: 'Futura PT', 'Avenir Next', 'Segoe UI', Arial, sans-serif;
-  letter-spacing: 0.01em;
+  font-family: 'Montserrat', 'Avenir Next', 'Segoe UI', Arial, sans-serif;
+  letter-spacing: -0.01em;
 }
