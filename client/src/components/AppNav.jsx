@@ -41,9 +41,9 @@ function getTabs(isAdmin) {
 export function AppHeader({ user, activeView, onChangeView, onLogout }) {
   return (
     <header className="border-b border-white/10">
-      <div className="mx-auto flex max-w-[1360px] items-center gap-7 px-4 py-3 md:px-8">
+      <div className="mx-auto flex max-w-[1360px] items-center gap-7 px-4 py-2 md:px-8 md:py-3">
         <div className="flex items-center gap-2.5">
-          <span className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] bg-sfIce">
+          <span className="flex h-[30px] w-[30px] items-center justify-center rounded-[9px] bg-sfIce md:h-[34px] md:w-[34px] md:rounded-[10px]">
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
               <rect x="1" y="1" width="7" height="5" rx="1.5" fill="#012E44" />
               <rect x="10" y="1" width="7" height="5" rx="1.5" fill="#FFFFFF" />
@@ -77,7 +77,7 @@ export function AppHeader({ user, activeView, onChangeView, onLogout }) {
         <div className="ml-auto flex items-center gap-3">
           <span
             aria-hidden="true"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-sfIce text-[13px] font-bold text-sfNavy"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-sfIce text-xs font-bold text-sfNavy md:h-9 md:w-9 md:text-[13px]"
           >
             {getInitials(user?.username)}
           </span>
@@ -87,7 +87,7 @@ export function AppHeader({ user, activeView, onChangeView, onLogout }) {
           <button
             type="button"
             onClick={onLogout}
-            className="h-9 rounded-[10px] border border-white/25 px-3 text-sm font-semibold text-white transition hover:bg-white/10"
+            className="h-8 rounded-[10px] border border-white/25 px-3 text-[13px] font-semibold text-white transition hover:bg-white/10 md:h-9 md:text-sm"
           >
             Log out
           </button>

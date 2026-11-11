@@ -755,19 +755,19 @@ function App() {
       <BrandBackground />
       <AppHeader user={user} activeView={activeView} onChangeView={changeView} onLogout={handleLogout} />
 
-      <main className="mx-auto flex max-w-[1360px] flex-col gap-5 px-4 pb-32 pt-5 md:px-8 md:pb-10 md:pt-7">
+      <main className="mx-auto flex max-w-[1360px] flex-col gap-3 px-4 pb-28 pt-3 md:gap-5 md:px-8 md:pb-10 md:pt-7">
         {activeView === 'desk' ? (
           <>
-            <section aria-label="Choose a day" className="flex flex-wrap items-end justify-between gap-4 md:gap-5">
+            <section aria-label="Choose a day" className="flex flex-wrap items-end justify-between gap-2.5 md:gap-5">
               <div className="min-w-0">
                 <p className="mb-1 hidden text-[13px] font-semibold uppercase tracking-[0.08em] text-[#9CC3D6] md:block">
                   Week of {formatLongDate(getWorkWeek(selectedDate)[0]).split(' ').slice(1).join(' ')}
                 </p>
-                <h1 className="font-heading text-[25px] font-bold leading-tight text-white md:text-[34px]">
+                <h1 className="font-heading text-[21px] font-bold leading-tight text-white md:text-[34px]">
                   {formatLongDate(selectedDate)}
                 </h1>
                 <p
-                  className={`mt-1 flex items-center gap-1.5 text-sm font-semibold md:text-[15px] ${
+                  className={`mt-0.5 flex items-center gap-1.5 text-[13px] font-semibold md:mt-1 md:text-[15px] ${
                     myBookingForSelectedDate && !user.isAdmin ? 'text-sfIce' : 'text-[#C9DCE6]'
                   }`}
                 >

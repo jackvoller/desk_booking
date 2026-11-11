@@ -41,6 +41,15 @@ function toRect(rect, portrait) {
   };
 }
 
+// Small phone-only nudges (portrait units) so labels and chairs have breathing room.
+const PORTRAIT_NUDGE = { R: { x: 24, y: 0 } };
+
+function deskRect(desk, portrait) {
+  const rect = toRect(desk, portrait);
+  const nudge = portrait ? PORTRAIT_NUDGE[desk.id.charAt(0)] : null;
+  return nudge ? { ...rect, x: rect.x + nudge.x, y: rect.y + nudge.y } : rect;
+}
+
 function pointsToPath(points, portrait, close = false) {
   const segments = points.map((point, index) => {
     const [x, y] = toPoint(point, portrait);
@@ -135,7 +144,7 @@ function DeskTile({ desk, portrait, frame, booking, status, isSelected, onSelect
   const size = portrait ? 'sm' : 'lg';
   const look = DESK_LOOK[status];
   const side = portrait ? PORTRAIT_SIDE[desk.chairPosition] : desk.chairPosition;
-  const rect = toRect(desk, portrait);
+  const rect = deskRect(desk, portrait);
   const name = booking?.username ?? '';
   const label =
     status === 'free'
@@ -296,7 +305,7 @@ function LandscapeLabels() {
       <span className={`${LABEL_CLASS} text-xs`} style={{ left: '85.17%', top: '16.6%', transform: centred }}>
         Right pod
       </span>
-      <span className={`${LABEL_CLASS} text-xs !text-[#036483]`} style={{ left: '83.5%', top: '93.4%', transform: centred }}>
+      <span className={`${LABEL_CLASS} text-xs !text-[#036483]`} style={{ left: '79.4%', top: '67.8%', transform: centred }}>
         Lounge
       </span>
       <span
@@ -307,6 +316,32 @@ function LandscapeLabels() {
         <ArrowIcon direction="right" />
       </span>
     </>
+  );
+}
+
+// On phones the pods are marked by thin bars in the margin left of the room,
+// spanning each pod's rows, instead of labels squeezed between the desks.
+const PORTRAIT_POD_MARKERS = [
+  { label: 'Right pod', top: 4, bottom: 26 },
+  { label: 'Centre pod', top: 36.5, bottom: 57.5 },
+  { label: 'Left pod', top: 64, bottom: 98 }
+];
+
+function PodMarker({ label, top, bottom }) {
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute flex items-stretch gap-[3px]"
+      style={{ left: -15, top: `${top}%`, height: `${bottom - top}%` }}
+    >
+      <span
+        className="flex items-center justify-center whitespace-nowrap text-[9px] font-bold uppercase leading-none tracking-[0.12em] text-[#C9DCE6]"
+        style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+      >
+        {label}
+      </span>
+      <span className="w-[2px] rounded-full bg-sfIce/70" />
+    </div>
   );
 }
 
@@ -321,18 +356,10 @@ function PortraitLabels() {
         <ArrowIcon direction="up" />
         Entrance
       </span>
-      <span className={`${LABEL_CLASS} text-[10px]`} style={{ left: '37%', top: '28.2%', transform: centred }}>
-        Right pod
-      </span>
-      <span className={`${LABEL_CLASS} text-[10px]`} style={{ left: '30%', top: '60%', transform: centred }}>
-        Centre pod
-      </span>
-      <span className={`${LABEL_CLASS} text-[10px] leading-tight`} style={{ left: '5%', top: '79%' }}>
-        Left
-        <br />
-        pod
-      </span>
-      <span className={`${LABEL_CLASS} text-[10px] !text-[#036483]`} style={{ left: '78%', top: '29.3%', transform: centred }}>
+      {PORTRAIT_POD_MARKERS.map((pod) => (
+        <PodMarker key={pod.label} {...pod} />
+      ))}
+      <span className={`${LABEL_CLASS} text-[10px] !text-[#036483]`} style={{ left: '83%', top: '29.3%', transform: centred }}>
         Lounge
       </span>
 
@@ -424,7 +451,7 @@ export function MiniMap({ deskId, dark = false, className = '' }) {
             aria-hidden="true"
             className="absolute rounded-[2px]"
             style={{
-              ...percentBox(toRect(desk, true), PORTRAIT),
+              ...percentBox(deskRect(desk, true), PORTRAIT),
               background: hit ? (dark ? '#13C5E2' : '#04588C') : dark ? 'rgba(255,255,255,0.35)' : '#CBD5E1',
               boxShadow: hit && dark ? '0 0 0 2px #04588C, 0 0 0 4px #13C5E2' : 'none'
             }}

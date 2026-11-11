@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { getDeskZone } from '../config/floorPlanSchema';
 import { getInitials } from '../utils/bookings';
 import { getDateParts } from '../utils/date';
@@ -30,6 +30,7 @@ const QUIET_BUTTON =
 export const CARD = 'rounded-[20px] bg-white shadow-[0_12px_40px_rgba(0,20,35,0.35)]';
 
 // Mon–Fri buttons for the week around the selected date, with week arrows.
+// On phones the strip is compact and can also be swiped to change week.
 export function WeekStrip({
   days,
   selectedDate,
@@ -40,11 +41,42 @@ export function WeekStrip({
   canGoNextWeek,
   totalDesks
 }) {
+  const touchStart = useRef(null);
   const arrowClass =
-    'hidden h-16 w-10 flex-none items-center justify-center rounded-xl border border-white/25 bg-white/5 text-white transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-40 sm:flex';
+    'flex h-11 w-9 flex-none items-center justify-center rounded-xl border border-white/25 bg-white/5 text-white transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-30 sm:h-16 sm:w-10';
+
+  const handleTouchStart = (event) => {
+    const touch = event.touches[0];
+    touchStart.current = { x: touch.clientX, y: touch.clientY };
+  };
+
+  const handleTouchEnd = (event) => {
+    const start = touchStart.current;
+    touchStart.current = null;
+    if (!start) {
+      return;
+    }
+
+    const touch = event.changedTouches[0];
+    const dx = touch.clientX - start.x;
+    const dy = touch.clientY - start.y;
+    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) {
+      return;
+    }
+
+    if (dx < 0 && canGoNextWeek) {
+      onNextWeek();
+    } else if (dx > 0 && canGoPreviousWeek) {
+      onPreviousWeek();
+    }
+  };
 
   return (
-    <div className="flex w-full items-center gap-1.5 sm:w-auto sm:gap-2">
+    <div
+      className="flex w-full touch-pan-y items-center gap-1 sm:w-auto sm:gap-2"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       <button type="button" aria-label="Previous week" className={arrowClass} onClick={onPreviousWeek} disabled={!canGoPreviousWeek}>
         <ChevronIcon direction="left" />
       </button>
@@ -62,23 +94,25 @@ export function WeekStrip({
             }`}
             disabled={day.disabled}
             onClick={() => onSelectDate(day.date)}
-            className={`flex h-[60px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-[14px] border px-1 transition disabled:cursor-not-allowed disabled:opacity-40 sm:h-16 sm:w-[76px] sm:flex-none sm:items-start sm:justify-between sm:rounded-xl sm:px-2.5 sm:py-2 ${
+            className={`relative flex h-11 min-w-0 flex-1 flex-col items-center justify-center rounded-xl border px-1 transition disabled:cursor-not-allowed disabled:opacity-40 sm:h-16 sm:w-[76px] sm:flex-none sm:items-start sm:justify-between sm:px-2.5 sm:py-2 ${
               isActive
                 ? 'border-sfIce bg-sfIce text-sfNavy'
                 : 'border-white bg-white text-sfNavy hover:border-sfIce'
             }`}
           >
             <span className="flex w-full flex-col items-center sm:flex-row sm:items-center sm:justify-between">
-              <span className={`text-xs font-semibold sm:text-[13px] ${isActive ? 'text-sfNavy/75' : 'text-[#5B6475]'}`}>
+              <span
+                className={`text-[10px] font-semibold uppercase leading-none tracking-[0.04em] sm:text-[13px] sm:normal-case sm:leading-normal sm:tracking-normal ${
+                  isActive ? 'text-sfNavy/75' : 'text-[#5B6475]'
+                }`}
+              >
                 {parts.weekdayShort}
-                <span className={`ml-1 hidden text-[17px] font-bold sm:inline ${'text-sfNavy'}`}>
-                  {parts.day}
-                </span>
+                <span className="ml-1 hidden text-[17px] font-bold text-sfNavy sm:inline">{parts.day}</span>
               </span>
-              <span className="text-[19px] font-bold leading-none sm:hidden">{parts.day}</span>
+              <span className="mt-0.5 text-base font-bold leading-none sm:hidden">{parts.day}</span>
               <span
                 aria-hidden="true"
-                className="mt-1 h-1.5 w-1.5 rounded-full sm:mt-0 sm:h-2 sm:w-2"
+                className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full sm:static sm:h-2 sm:w-2"
                 style={{ background: day.hasMine ? (isActive ? '#012E44' : '#04588C') : 'transparent' }}
               />
             </span>
