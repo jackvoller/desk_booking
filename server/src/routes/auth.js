@@ -2,6 +2,7 @@ import { randomBytes, timingSafeEqual } from 'crypto';
 import { Router } from 'express';
 import passport from 'passport';
 import { isGoogleOAuthConfigured } from '../config/passport.js';
+import { canBookForOthers } from '../services/permissions.js';
 
 const router = Router();
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -298,7 +299,7 @@ router.get('/slack/callback', async (req, res, next) => {
   }
 });
 
-router.get('/me', (req, res) => {
+router.get('/me', async (req, res, next) => {
   const authProviders = getAuthProviders();
 
   if (!req.isAuthenticated?.()) {
@@ -308,15 +309,20 @@ router.get('/me', (req, res) => {
     });
   }
 
-  return res.json({
-    user: {
-      id: req.user.id,
-      username: req.user.username,
-      email: req.user.email,
-      isAdmin: Boolean(req.user.isAdmin)
-    },
-    authProviders
-  });
+  try {
+    return res.json({
+      user: {
+        id: req.user.id,
+        username: req.user.username,
+        email: req.user.email,
+        isAdmin: Boolean(req.user.isAdmin),
+        canBookForOthers: await canBookForOthers(req.user)
+      },
+      authProviders
+    });
+  } catch (error) {
+    return next(error);
+  }
 });
 
 router.post('/dev-login', (req, res, next) => {

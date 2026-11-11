@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import AccessManager from './components/AccessManager';
 import { AppHeader } from './components/AppNav';
 import BrandBackground from './components/BrandBackground';
 import { BottomSheet, CARD, DeskDetails, InOfficeList, WeekStrip, YourDeskCard } from './components/DeskPanel';
@@ -198,6 +199,7 @@ function App() {
     });
   }, [user, refreshBookingsList]);
 
+  const canBookForOthers = Boolean(user?.isAdmin || user?.canBookForOthers);
   const bookingCountToday = bookings.length;
   const freeDeskCount = Math.max(0, DESKS.length - bookingCountToday);
   const myBookingForSelectedDate = useMemo(
@@ -297,7 +299,8 @@ function App() {
     const dayLabel = formatLongDate(selectedDate);
 
     try {
-      const existing = !user?.isAdmin ? myBookingForSelectedDate : null;
+      const guestName = canBookForOthers ? bookingFor.trim() : '';
+      const existing = !user?.isAdmin && !guestName ? myBookingForSelectedDate : null;
 
       if (existing && existing.deskId !== deskId) {
         // One desk per day: moving means giving up the old desk first.
@@ -310,7 +313,6 @@ function App() {
         }
         setSuccess(`Moved you from ${existing.deskId} to ${deskId} for ${dayLabel}`);
       } else {
-        const guestName = user?.isAdmin ? bookingFor.trim() : '';
         await api.createBooking(deskId, selectedDate, guestName);
         setSuccess(guestName ? `Desk ${deskId} booked for ${guestName} on ${dayLabel}` : `Desk ${deskId} is yours for ${dayLabel}`);
       }
@@ -406,7 +408,9 @@ function App() {
     setIsDevLoggingIn(true);
     try {
       const response = await api.devLogin(username, email);
-      setUser(response.user ?? null);
+      // Re-read the session so permissions worked out on the server come with it.
+      const current = await api.getCurrentUser().catch(() => null);
+      setUser(current?.user ?? response.user ?? null);
       setDevUsername('');
       setDevEmail('');
     } catch (apiError) {
@@ -431,7 +435,8 @@ function App() {
     setIsAdminLoggingIn(true);
     try {
       const response = await api.adminLogin(username, password);
-      setUser(response.user ?? null);
+      const current = await api.getCurrentUser().catch(() => null);
+      setUser(current?.user ?? response.user ?? null);
       setAdminPassword('');
       setActiveView('desk');
       setSuccess('Signed in as admin.');
@@ -741,6 +746,8 @@ function App() {
     status: selectedStatus,
     dateLabel: shortDateLabel,
     isAdmin: Boolean(user.isAdmin),
+    canBookForOthers,
+    canRemove: Boolean(user.isAdmin) || (selectedBooking ? selectedBooking.userId === user.id : false),
     myBooking: myBookingForSelectedDate,
     bookingFor,
     onBookingForChange: setBookingFor,
@@ -841,6 +848,8 @@ function App() {
               <DeskDetails {...deskDetailsProps} inSheet />
             </BottomSheet>
           </>
+        ) : activeView === 'access' && user.isAdmin ? (
+          <AccessManager />
         ) : activeView === 'calendar' ? (
           <section>
             <h1 className="mb-4 font-heading text-[28px] font-bold text-white md:text-[34px]">Calendar</h1>
