@@ -74,11 +74,23 @@ export const ENTRANCE = {
   arc: { from: [1232, 80], control: [1246, 120], to: [1232, 160] }
 };
 
-// Lounge, left to right: sofa (back against the left), coffee table, TV stand on the wall.
+// Lounge, left to right: rug, teal sofa (back against the left) with cushions,
+// coffee table, and a TV stand on the wall. Two plants in the corners.
+// Colours come from the Silverfin palette (navy, Ice and the teal wave shades).
 export const LOUNGE = [
-  { id: 'sofa', x: 950, y: 525, width: 58, height: 170, rx: 20, tone: 'soft' },
-  { id: 'sofa-back', x: 936, y: 538, width: 20, height: 144, rx: 10, tone: 'light' },
-  { id: 'coffee-table', x: 1040, y: 565, width: 50, height: 90, rx: 6, tone: 'light' },
-  { id: 'tv-stand', x: 1150, y: 545, width: 30, height: 130, rx: 4, tone: 'soft' },
-  { id: 'tv', x: 1184, y: 560, width: 8, height: 100, rx: 2, tone: 'dark' }
+  { id: 'rug', x: 928, y: 522, width: 177, height: 176, rx: 22, fill: '#E8F8FC', stroke: '#9FE3F0', dashed: true },
+  { id: 'sofa', x: 950, y: 525, width: 58, height: 170, rx: 18, fill: '#1AA0B8', stroke: '#0A7791' },
+  { id: 'sofa-back', x: 936, y: 536, width: 22, height: 148, rx: 10, fill: '#0A7791', stroke: 'none' },
+  { id: 'cushion-1', x: 964, y: 535, width: 36, height: 46, rx: 9, fill: '#57C0CA', stroke: 'none' },
+  { id: 'cushion-2', x: 964, y: 587, width: 36, height: 46, rx: 9, fill: '#57C0CA', stroke: 'none' },
+  { id: 'cushion-3', x: 964, y: 639, width: 36, height: 46, rx: 9, fill: '#57C0CA', stroke: 'none' },
+  { id: 'coffee-table', x: 1040, y: 565, width: 50, height: 90, rx: 8, fill: '#FFFFFF', stroke: '#012E44' },
+  { id: 'coffee-book', x: 1053, y: 584, width: 24, height: 17, rx: 3, fill: '#13C5E2', stroke: 'none' },
+  { id: 'coffee-mug', shape: 'circle', cx: 1065, cy: 630, r: 7, fill: '#04588C', stroke: 'none' },
+  { id: 'tv-stand', x: 1150, y: 545, width: 30, height: 130, rx: 5, fill: '#012E44', stroke: 'none' },
+  { id: 'tv', x: 1184, y: 556, width: 8, height: 108, rx: 2, fill: '#13C5E2', stroke: 'none' },
+  { id: 'plant-top', shape: 'circle', cx: 1178, cy: 490, r: 15, fill: '#57C0CA', stroke: '#0A7791' },
+  { id: 'plant-top-leaf', shape: 'circle', cx: 1178, cy: 490, r: 7, fill: '#0A7791', stroke: 'none' },
+  { id: 'plant-bottom', shape: 'circle', cx: 1176, cy: 720, r: 15, fill: '#57C0CA', stroke: '#0A7791' },
+  { id: 'plant-bottom-leaf', shape: 'circle', cx: 1176, cy: 720, r: 7, fill: '#0A7791', stroke: 'none' }
 ];

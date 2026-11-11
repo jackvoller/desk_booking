@@ -24,12 +24,6 @@ const SIZES = {
   sm: { chairOffset: 12, chairLong: 20, chairShort: 7, barInset: 4, barThickness: 3, pad: 3, barPad: 9, radius: 8 }
 };
 
-const FURNITURE_TONE = {
-  soft: { fill: '#E4E9EF', stroke: '#B8C4D1' },
-  light: { fill: '#EEF2F5', stroke: '#B8C4D1' },
-  dark: { fill: '#475569', stroke: 'none' }
-};
-
 function toPoint([x, y], portrait) {
   return portrait ? [y - CROP.y, CROP.x + CROP.width - x] : [x - CROP.x, y - CROP.y];
 }
@@ -246,16 +240,22 @@ function RoomDrawing({ portrait, patternId }) {
         strokeDasharray={portrait ? '6 6' : '4 4'}
       />
       {LOUNGE.map((item) => {
-        const rect = toRect(item, portrait);
-        const tone = FURNITURE_TONE[item.tone];
+        const strokeWidth = item.stroke === 'none' ? 0 : portrait ? 3 : 2;
+        if (item.shape === 'circle') {
+          const [cxp, cyp] = toPoint([item.cx, item.cy], portrait);
+          return (
+            <circle key={item.id} cx={cxp} cy={cyp} r={item.r} fill={item.fill} stroke={item.stroke} strokeWidth={strokeWidth} />
+          );
+        }
         return (
           <rect
             key={item.id}
-            {...rect}
+            {...toRect(item, portrait)}
             rx={item.rx}
-            fill={tone.fill}
-            stroke={tone.stroke}
-            strokeWidth={tone.stroke === 'none' ? 0 : portrait ? 3 : 2}
+            fill={item.fill}
+            stroke={item.stroke}
+            strokeWidth={strokeWidth}
+            strokeDasharray={item.dashed ? (portrait ? '10 8' : '8 6') : undefined}
           />
         );
       })}
@@ -296,7 +296,7 @@ function LandscapeLabels() {
       <span className={`${LABEL_CLASS} text-xs`} style={{ left: '85.17%', top: '16.6%', transform: centred }}>
         Right pod
       </span>
-      <span className={`${LABEL_CLASS} text-xs`} style={{ left: '83.5%', top: '93.4%', transform: centred }}>
+      <span className={`${LABEL_CLASS} text-xs !text-[#036483]`} style={{ left: '83.5%', top: '93.4%', transform: centred }}>
         Lounge
       </span>
       <span
@@ -332,7 +332,7 @@ function PortraitLabels() {
         <br />
         pod
       </span>
-      <span className={`${LABEL_CLASS} text-[10px]`} style={{ left: '78%', top: '28.6%', transform: centred }}>
+      <span className={`${LABEL_CLASS} text-[10px] !text-[#036483]`} style={{ left: '78%', top: '29.3%', transform: centred }}>
         Lounge
       </span>
 
